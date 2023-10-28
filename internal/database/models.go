@@ -10,10 +10,12 @@ import (
 )
 
 type Org struct {
-	ID        string
-	Name      string
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	ID          string
+	Name        string
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+	Description string
+	CreatorID   string
 }
 
 type Project struct {
@@ -22,6 +24,17 @@ type Project struct {
 	Description string
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
+	OrgID       string
+}
+
+type ProjectsTeam struct {
+	ProjectID string
+	TeamID    string
+}
+
+type RevokedToken struct {
+	ID          string
+	TokenString string
 }
 
 type Task struct {
@@ -39,6 +52,11 @@ type Team struct {
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	OrgID     string
+}
+
+type TeamsUser struct {
+	TeamID string
+	UserID string
 }
 
 type User struct {

@@ -13,27 +13,27 @@ import (
 func CreateProjectHandler(c *gin.Context) {
 	db, errBool := c.Value(string(config.DbContextKey)).(*database.Queries)
 	if !errBool {
-		c.JSON(http.StatusInternalServerError, gin.H{
+		c.XML(http.StatusInternalServerError, gin.H{
 			"error": "Unable to get database connection",
 		})
 		return
 	}
 
 	var params struct {
-		Name        string `json:"name"`
-		Description string `json:"description"`
+		Name        string `XML:"name"`
+		Description string `XML:"description"`
 	}
 
-	if err := c.BindJSON(&params); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Invalid JSON",
+	if err := c.ShouldBindXML(&params); err != nil {
+		c.XML(http.StatusBadRequest, gin.H{
+			"error": "Invalid XML",
 		})
 		return
 	}
 
 	projectID, err := uuid.NewUUID()
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
+		c.XML(http.StatusBadRequest, gin.H{
 			"error": "Unable to generate project ID",
 		})
 		return
@@ -49,31 +49,44 @@ func CreateProjectHandler(c *gin.Context) {
 
 	_, err = db.CreateProject(c, args)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
+		c.XML(http.StatusInternalServerError, gin.H{
 			"error": "Unable to create new project",
 		})
 		return
 	}
 
-	c.JSON(http.StatusCreated, args)
+	c.XML(http.StatusCreated, args)
 }
 
 func GetProjectsHandler(c *gin.Context) {
 	db, errBool := c.Value(string(config.DbContextKey)).(*database.Queries)
 	if !errBool {
-		c.JSON(http.StatusInternalServerError, gin.H{
+		c.XML(http.StatusInternalServerError, gin.H{
 			"error": "Unable to get database connection",
 		})
 		return
 	}
 
-	result, err := db.GetAllProjects(c)
+	projects, err := db.GetAllProjects(c)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
+		c.XML(http.StatusInternalServerError, gin.H{
 			"error": "Unable to get projects",
 		})
 		return
 	}
 
-	c.JSON(http.StatusOK, result)
+	var projectMap []gin.H
+	for _, project := range projects {
+		projectMap = append(projectMap, gin.H{
+			"ID":          project.ID,
+			"Name":        project.Name,
+			"Description": project.Description,
+			"CreatedAt":   project.CreatedAt,
+			"UpdatedAt":   project.UpdatedAt,
+		})
+	}
+
+	c.XML(http.StatusOK, gin.H{
+		"Projects": projectMap,
+	})
 }

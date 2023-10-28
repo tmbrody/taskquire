@@ -14,28 +14,28 @@ import (
 func CreateTaskHandler(c *gin.Context) {
 	db, errBool := c.Value(string(config.DbContextKey)).(*database.Queries)
 	if !errBool {
-		c.JSON(http.StatusInternalServerError, gin.H{
+		c.XML(http.StatusInternalServerError, gin.H{
 			"error": "Unable to get database connection",
 		})
 		return
 	}
 
 	var params struct {
-		Name        string `json:"name"`
-		Description string `json:"description"`
-		ProjectID   string `json:"project_id"`
+		Name        string `XML:"name"`
+		Description string `XML:"description"`
+		ProjectID   string `XML:"project_id"`
 	}
 
-	if err := c.BindJSON(&params); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Invalid JSON",
+	if err := c.ShouldBindXML(&params); err != nil {
+		c.XML(http.StatusBadRequest, gin.H{
+			"error": "Invalid XML",
 		})
 		return
 	}
 
 	projects, err := db.GetAllProjects(c)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
+		c.XML(http.StatusInternalServerError, gin.H{
 			"error": "Unable to get projects",
 		})
 		return
@@ -50,7 +50,7 @@ func CreateTaskHandler(c *gin.Context) {
 	}
 
 	if projectID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{
+		c.XML(http.StatusBadRequest, gin.H{
 			"error": "Invalid project ID",
 		})
 		return
@@ -58,7 +58,7 @@ func CreateTaskHandler(c *gin.Context) {
 
 	taskID, err := uuid.NewUUID()
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
+		c.XML(http.StatusBadRequest, gin.H{
 			"error": "Unable to generate task ID",
 		})
 		return
@@ -84,31 +84,45 @@ func CreateTaskHandler(c *gin.Context) {
 
 	_, err = db.CreateTask(c, args)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
+		c.XML(http.StatusInternalServerError, gin.H{
 			"error": "Unable to create new task",
 		})
 		return
 	}
 
-	c.JSON(http.StatusCreated, args)
+	c.XML(http.StatusCreated, args)
 }
 
 func GetTasksHandler(c *gin.Context) {
 	db, errBool := c.Value(string(config.DbContextKey)).(*database.Queries)
 	if !errBool {
-		c.JSON(http.StatusInternalServerError, gin.H{
+		c.XML(http.StatusInternalServerError, gin.H{
 			"error": "Unable to get database connection",
 		})
 		return
 	}
 
-	result, err := db.GetAllTasks(c)
+	tasks, err := db.GetAllTasks(c)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
+		c.XML(http.StatusInternalServerError, gin.H{
 			"error": "Unable to get tasks",
 		})
 		return
 	}
 
-	c.JSON(http.StatusOK, result)
+	var taskMap []gin.H
+	for _, task := range tasks {
+		taskMap = append(taskMap, gin.H{
+			"ID":          task.ID,
+			"Name":        task.Name,
+			"Description": task.Description,
+			"CreatedAt":   task.CreatedAt,
+			"UpdatedAt":   task.UpdatedAt,
+			"ProjectID":   task.ProjectID,
+		})
+	}
+
+	c.XML(http.StatusOK, gin.H{
+		"Tasks": taskMap,
+	})
 }

@@ -13,27 +13,27 @@ import (
 func CreateTeamHandler(c *gin.Context) {
 	db, errBool := c.Value(string(config.DbContextKey)).(*database.Queries)
 	if !errBool {
-		c.JSON(http.StatusInternalServerError, gin.H{
+		c.XML(http.StatusInternalServerError, gin.H{
 			"error": "Unable to get database connection",
 		})
 		return
 	}
 
 	var params struct {
-		Name  string `json:"name"`
-		OrgID string `json:"org_id"`
+		Name  string `XML:"name"`
+		OrgID string `XML:"org_id"`
 	}
 
-	if err := c.BindJSON(&params); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Invalid JSON",
+	if err := c.ShouldBindXML(&params); err != nil {
+		c.XML(http.StatusBadRequest, gin.H{
+			"error": "Invalid XML",
 		})
 		return
 	}
 
 	orgs, err := db.GetAllOrgs(c)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
+		c.XML(http.StatusInternalServerError, gin.H{
 			"error": "Unable to get organizations",
 		})
 		return
@@ -48,7 +48,7 @@ func CreateTeamHandler(c *gin.Context) {
 	}
 
 	if orgID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{
+		c.XML(http.StatusBadRequest, gin.H{
 			"error": "Invalid organization ID",
 		})
 		return
@@ -56,7 +56,7 @@ func CreateTeamHandler(c *gin.Context) {
 
 	teamID, err := uuid.NewUUID()
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
+		c.XML(http.StatusBadRequest, gin.H{
 			"error": "Unable to generate team ID",
 		})
 		return
@@ -72,31 +72,44 @@ func CreateTeamHandler(c *gin.Context) {
 
 	_, err = db.CreateTeam(c, args)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
+		c.XML(http.StatusInternalServerError, gin.H{
 			"error": "Unable to create new team",
 		})
 		return
 	}
 
-	c.JSON(http.StatusCreated, args)
+	c.XML(http.StatusCreated, args)
 }
 
 func GetTeamsHandler(c *gin.Context) {
 	db, errBool := c.Value(string(config.DbContextKey)).(*database.Queries)
 	if !errBool {
-		c.JSON(http.StatusInternalServerError, gin.H{
+		c.XML(http.StatusInternalServerError, gin.H{
 			"error": "Unable to get database connection",
 		})
 		return
 	}
 
-	result, err := db.GetAllTeams(c)
+	teams, err := db.GetAllTeams(c)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
+		c.XML(http.StatusInternalServerError, gin.H{
 			"error": "Unable to get teams",
 		})
 		return
 	}
 
-	c.JSON(http.StatusOK, result)
+	var teamMap []gin.H
+	for _, team := range teams {
+		teamMap = append(teamMap, gin.H{
+			"ID":        team.ID,
+			"Name":      team.Name,
+			"CreatedAt": team.CreatedAt,
+			"UpdatedAt": team.UpdatedAt,
+			"OrgID":     team.OrgID,
+		})
+	}
+
+	c.XML(http.StatusOK, gin.H{
+		"Teams": teamMap,
+	})
 }

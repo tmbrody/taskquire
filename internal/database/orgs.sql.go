@@ -12,28 +12,41 @@ import (
 )
 
 const createOrg = `-- name: CreateOrg :execresult
-INSERT INTO orgs(id, name, created_at, updated_at)
-VALUES (?, ?, ?, ?)
+INSERT INTO orgs(id, name, description, creator_id, created_at, updated_at)
+VALUES (?, ?, ?, ?, ?, ?)
 `
 
 type CreateOrgParams struct {
-	ID        string
-	Name      string
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	ID          string
+	Name        string
+	Description string
+	CreatorID   string
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
 }
 
 func (q *Queries) CreateOrg(ctx context.Context, arg CreateOrgParams) (sql.Result, error) {
 	return q.db.ExecContext(ctx, createOrg,
 		arg.ID,
 		arg.Name,
+		arg.Description,
+		arg.CreatorID,
 		arg.CreatedAt,
 		arg.UpdatedAt,
 	)
 }
 
+const deleteOrg = `-- name: DeleteOrg :execresult
+DELETE FROM orgs
+WHERE id = ?
+`
+
+func (q *Queries) DeleteOrg(ctx context.Context, id string) (sql.Result, error) {
+	return q.db.ExecContext(ctx, deleteOrg, id)
+}
+
 const getAllOrgs = `-- name: GetAllOrgs :many
-SELECT id, name, created_at, updated_at FROM orgs
+SELECT id, name, created_at, updated_at, description, creator_id FROM orgs
 `
 
 func (q *Queries) GetAllOrgs(ctx context.Context) ([]Org, error) {
@@ -50,6 +63,8 @@ func (q *Queries) GetAllOrgs(ctx context.Context) ([]Org, error) {
 			&i.Name,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.Description,
+			&i.CreatorID,
 		); err != nil {
 			return nil, err
 		}
@@ -62,4 +77,45 @@ func (q *Queries) GetAllOrgs(ctx context.Context) ([]Org, error) {
 		return nil, err
 	}
 	return items, nil
+}
+
+const getOrgByID = `-- name: GetOrgByID :one
+SELECT id, name, created_at, updated_at, description, creator_id FROM orgs
+WHERE id = ?
+`
+
+func (q *Queries) GetOrgByID(ctx context.Context, id string) (Org, error) {
+	row := q.db.QueryRowContext(ctx, getOrgByID, id)
+	var i Org
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Description,
+		&i.CreatorID,
+	)
+	return i, err
+}
+
+const updateOrg = `-- name: UpdateOrg :execresult
+UPDATE orgs
+SET name = ?, description = ?, updated_at = ?
+WHERE id = ?
+`
+
+type UpdateOrgParams struct {
+	Name        string
+	Description string
+	UpdatedAt   time.Time
+	ID          string
+}
+
+func (q *Queries) UpdateOrg(ctx context.Context, arg UpdateOrgParams) (sql.Result, error) {
+	return q.db.ExecContext(ctx, updateOrg,
+		arg.Name,
+		arg.Description,
+		arg.UpdatedAt,
+		arg.ID,
+	)
 }

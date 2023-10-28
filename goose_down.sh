@@ -9,3 +9,4 @@ dbPort=$(echo $DATABASE_URL | cut -d':' -f3 | cut -d'/' -f1)
 dbName=$(echo $DATABASE_URL | cut -d'/' -f2)
 
 goose -dir sql/schema mysql "$dbUser:$dbPass@tcp($dbHost:$dbPort)/$dbName" down
+goose -dir sql/schema mysql "$dbUser:$dbPass@tcp($dbHost:$dbPort)/$dbName" down

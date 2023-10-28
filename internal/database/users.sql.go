@@ -36,6 +36,15 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (sql.Res
 	)
 }
 
+const deleteUser = `-- name: DeleteUser :execresult
+DELETE FROM users
+WHERE id = ?
+`
+
+func (q *Queries) DeleteUser(ctx context.Context, id string) (sql.Result, error) {
+	return q.db.ExecContext(ctx, deleteUser, id)
+}
+
 const getAllUsers = `-- name: GetAllUsers :many
 SELECT id, name, email, password, created_at, updated_at FROM users
 `
@@ -68,4 +77,28 @@ func (q *Queries) GetAllUsers(ctx context.Context) ([]User, error) {
 		return nil, err
 	}
 	return items, nil
+}
+
+const updateUser = `-- name: UpdateUser :execresult
+UPDATE users
+SET name = ?, email = ?, password = ?, updated_at = ?
+WHERE id = ?
+`
+
+type UpdateUserParams struct {
+	Name      string
+	Email     string
+	Password  string
+	UpdatedAt time.Time
+	ID        string
+}
+
+func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (sql.Result, error) {
+	return q.db.ExecContext(ctx, updateUser,
+		arg.Name,
+		arg.Email,
+		arg.Password,
+		arg.UpdatedAt,
+		arg.ID,
+	)
 }

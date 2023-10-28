@@ -21,19 +21,29 @@ func SetupRoutes(r *gin.Engine) {
 
 	r.GET("/", handlers.HomeHandler)
 	r.GET("/about", handlers.AboutHandler)
+}
 
-	r.GET("/orgs", handlers.GetOrgsHandler)
+func SetupApiRoutes(r *gin.RouterGroup) {
 	r.POST("/orgs", handlers.CreateOrgHandler)
+	r.GET("/orgs", handlers.GetOrgsHandler)
+	r.PUT("/orgs", handlers.UpdateOrgHandler)
+	r.DELETE("/orgs", handlers.DeleteOrgHandler)
 
-	r.GET("/teams", handlers.GetTeamsHandler)
 	r.POST("/teams", handlers.CreateTeamHandler)
+	r.GET("/teams", handlers.GetTeamsHandler)
 
-	r.GET("/projects", handlers.GetProjectsHandler)
-	r.POST("/projects", handlers.CreateProjectHandler)
-
-	r.GET("/users", handlers.GetUsersHandler)
 	r.POST("/users", handlers.CreateUserHandler)
+	r.GET("/users", handlers.GetUsersHandler)
+	r.PUT("/users", handlers.UpdateUserHandler)
+	r.DELETE("/users", handlers.DeleteUserHandler)
 
-	r.GET("/tasks", handlers.GetTasksHandler)
+	r.POST("/login", handlers.LoginUserHandler)
+	r.POST("/refresh", handlers.RefreshTokenHandler)
+	r.POST("/revoke", handlers.RevokeTokenHandler)
+
+	r.POST("/projects", handlers.CreateProjectHandler)
+	r.GET("/projects", handlers.GetProjectsHandler)
+
 	r.POST("/tasks", handlers.CreateTaskHandler)
+	r.GET("/tasks", handlers.GetTasksHandler)
 }

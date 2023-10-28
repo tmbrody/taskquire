@@ -4,3 +4,7 @@ VALUES (?, ?, ?, ?, ?);
 
 -- name: GetAllTeams :many
 SELECT * FROM teams;
+
+-- name: GetTeamById :one
+SELECT * FROM teams
+WHERE id = ?;

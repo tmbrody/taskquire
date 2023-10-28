@@ -4,3 +4,11 @@ VALUES (?, ?, ?, ?, ?, ?);
 
 -- name: GetAllTasks :many
 SELECT * FROM tasks;
+
+-- name: GetTaskById :one
+SELECT * FROM tasks
+WHERE id = ?;
+
+-- name: GetTasksByProjectID :many
+SELECT * FROM tasks
+WHERE project_id = ?;

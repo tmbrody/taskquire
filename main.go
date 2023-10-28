@@ -31,6 +31,11 @@ func main() {
 		log.Fatal("TRUSTED_PROXIES environment variable is not set")
 	}
 
+	jwtSecret := os.Getenv("JWT_SECRET")
+	if jwtSecret == "" {
+		log.Fatal("JWT_SECRET environment variable is not set")
+	}
+
 	dbURL := os.Getenv("DATABASE_URL")
 	if dbURL == "" {
 		log.Fatal("DATABASE_URL environment variable is not set")
@@ -41,9 +46,16 @@ func main() {
 		log.Fatal(err)
 	}
 
+	defer func() {
+		if err := db.Close(); err != nil {
+			log.Printf("Error closing database connection: %v", err)
+		}
+	}()
+
 	dbQueries := database.New(db)
 
 	config.ApiCfg.DB = dbQueries
+	config.ApiCfg.JwtSecret = jwtSecret
 
 	r := gin.Default()
 
@@ -53,9 +65,12 @@ func main() {
 		panic(err)
 	}
 
-	r.Use(middleware.CustomMiddleware())
+	r.Use(middleware.DatabaseSetupMiddleware())
+
+	apiRouter := r.Group("/api")
 
 	routes.SetupRoutes(r)
+	routes.SetupApiRoutes(apiRouter)
 
 	err = r.Run(":" + port)
 	if err != nil {
