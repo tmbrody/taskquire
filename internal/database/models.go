@@ -15,7 +15,7 @@ type Org struct {
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
 	Description string
-	CreatorID   string
+	OwnerID     string
 }
 
 type Project struct {
@@ -32,11 +32,6 @@ type ProjectsTeam struct {
 	TeamID    string
 }
 
-type RevokedToken struct {
-	ID          string
-	TokenString string
-}
-
 type Task struct {
 	ID          string
 	Name        string
@@ -47,11 +42,12 @@ type Task struct {
 }
 
 type Team struct {
-	ID        string
-	Name      string
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	OrgID     string
+	ID          string
+	Name        string
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+	Description sql.NullString
+	OwnerID     string
 }
 
 type TeamsUser struct {

@@ -36,47 +36,22 @@ func (q *Queries) CreateTask(ctx context.Context, arg CreateTaskParams) (sql.Res
 	)
 }
 
-const getAllTasks = `-- name: GetAllTasks :many
-SELECT id, name, description, created_at, updated_at, project_id FROM tasks
-`
-
-func (q *Queries) GetAllTasks(ctx context.Context) ([]Task, error) {
-	rows, err := q.db.QueryContext(ctx, getAllTasks)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []Task
-	for rows.Next() {
-		var i Task
-		if err := rows.Scan(
-			&i.ID,
-			&i.Name,
-			&i.Description,
-			&i.CreatedAt,
-			&i.UpdatedAt,
-			&i.ProjectID,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const getTaskById = `-- name: GetTaskById :one
-SELECT id, name, description, created_at, updated_at, project_id FROM tasks
+const deleteTask = `-- name: DeleteTask :execresult
+DELETE FROM tasks
 WHERE id = ?
 `
 
-func (q *Queries) GetTaskById(ctx context.Context, id string) (Task, error) {
-	row := q.db.QueryRowContext(ctx, getTaskById, id)
+func (q *Queries) DeleteTask(ctx context.Context, id string) (sql.Result, error) {
+	return q.db.ExecContext(ctx, deleteTask, id)
+}
+
+const getTaskByName = `-- name: GetTaskByName :one
+SELECT id, name, description, created_at, updated_at, project_id FROM tasks
+WHERE name = ?
+`
+
+func (q *Queries) GetTaskByName(ctx context.Context, name string) (Task, error) {
+	row := q.db.QueryRowContext(ctx, getTaskByName, name)
 	var i Task
 	err := row.Scan(
 		&i.ID,
@@ -122,4 +97,26 @@ func (q *Queries) GetTasksByProjectID(ctx context.Context, projectID string) ([]
 		return nil, err
 	}
 	return items, nil
+}
+
+const updateTask = `-- name: UpdateTask :execresult
+UPDATE tasks
+SET name = ?, description = ?, updated_at = ?
+WHERE id = ?
+`
+
+type UpdateTaskParams struct {
+	Name        string
+	Description sql.NullString
+	UpdatedAt   time.Time
+	ID          string
+}
+
+func (q *Queries) UpdateTask(ctx context.Context, arg UpdateTaskParams) (sql.Result, error) {
+	return q.db.ExecContext(ctx, updateTask,
+		arg.Name,
+		arg.Description,
+		arg.UpdatedAt,
+		arg.ID,
+	)
 }

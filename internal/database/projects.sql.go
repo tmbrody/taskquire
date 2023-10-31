@@ -36,47 +36,22 @@ func (q *Queries) CreateProject(ctx context.Context, arg CreateProjectParams) (s
 	)
 }
 
-const getAllProjects = `-- name: GetAllProjects :many
-SELECT id, name, description, created_at, updated_at, org_id FROM projects
-`
-
-func (q *Queries) GetAllProjects(ctx context.Context) ([]Project, error) {
-	rows, err := q.db.QueryContext(ctx, getAllProjects)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []Project
-	for rows.Next() {
-		var i Project
-		if err := rows.Scan(
-			&i.ID,
-			&i.Name,
-			&i.Description,
-			&i.CreatedAt,
-			&i.UpdatedAt,
-			&i.OrgID,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const getProjectByID = `-- name: GetProjectByID :one
-SELECT id, name, description, created_at, updated_at, org_id FROM projects
+const deleteProject = `-- name: DeleteProject :execresult
+DELETE FROM projects
 WHERE id = ?
 `
 
-func (q *Queries) GetProjectByID(ctx context.Context, id string) (Project, error) {
-	row := q.db.QueryRowContext(ctx, getProjectByID, id)
+func (q *Queries) DeleteProject(ctx context.Context, id string) (sql.Result, error) {
+	return q.db.ExecContext(ctx, deleteProject, id)
+}
+
+const getProjectByName = `-- name: GetProjectByName :one
+SELECT id, name, description, created_at, updated_at, org_id FROM projects
+WHERE name = ?
+`
+
+func (q *Queries) GetProjectByName(ctx context.Context, name string) (Project, error) {
+	row := q.db.QueryRowContext(ctx, getProjectByName, name)
 	var i Project
 	err := row.Scan(
 		&i.ID,
@@ -122,4 +97,26 @@ func (q *Queries) GetProjectsByOrgID(ctx context.Context, orgID string) ([]Proje
 		return nil, err
 	}
 	return items, nil
+}
+
+const updateProject = `-- name: UpdateProject :execresult
+UPDATE projects
+SET name = ?, description = ?, updated_at = ?
+WHERE id = ?
+`
+
+type UpdateProjectParams struct {
+	Name        string
+	Description string
+	UpdatedAt   time.Time
+	ID          string
+}
+
+func (q *Queries) UpdateProject(ctx context.Context, arg UpdateProjectParams) (sql.Result, error) {
+	return q.db.ExecContext(ctx, updateProject,
+		arg.Name,
+		arg.Description,
+		arg.UpdatedAt,
+		arg.ID,
+	)
 }

@@ -12,30 +12,41 @@ import (
 )
 
 const createTeam = `-- name: CreateTeam :execresult
-INSERT INTO teams(id, name, created_at, updated_at, org_id)
-VALUES (?, ?, ?, ?, ?)
+INSERT INTO teams(id, name, description, owner_id, created_at, updated_at)
+VALUES (?, ?, ?, ?, ?, ?)
 `
 
 type CreateTeamParams struct {
-	ID        string
-	Name      string
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	OrgID     string
+	ID          string
+	Name        string
+	Description sql.NullString
+	OwnerID     string
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
 }
 
 func (q *Queries) CreateTeam(ctx context.Context, arg CreateTeamParams) (sql.Result, error) {
 	return q.db.ExecContext(ctx, createTeam,
 		arg.ID,
 		arg.Name,
+		arg.Description,
+		arg.OwnerID,
 		arg.CreatedAt,
 		arg.UpdatedAt,
-		arg.OrgID,
 	)
 }
 
+const deleteTeam = `-- name: DeleteTeam :execresult
+DELETE FROM teams
+WHERE id = ?
+`
+
+func (q *Queries) DeleteTeam(ctx context.Context, id string) (sql.Result, error) {
+	return q.db.ExecContext(ctx, deleteTeam, id)
+}
+
 const getAllTeams = `-- name: GetAllTeams :many
-SELECT id, name, created_at, updated_at, org_id FROM teams
+SELECT id, name, created_at, updated_at, description, owner_id FROM teams
 `
 
 func (q *Queries) GetAllTeams(ctx context.Context) ([]Team, error) {
@@ -52,7 +63,8 @@ func (q *Queries) GetAllTeams(ctx context.Context) ([]Team, error) {
 			&i.Name,
 			&i.CreatedAt,
 			&i.UpdatedAt,
-			&i.OrgID,
+			&i.Description,
+			&i.OwnerID,
 		); err != nil {
 			return nil, err
 		}
@@ -67,20 +79,78 @@ func (q *Queries) GetAllTeams(ctx context.Context) ([]Team, error) {
 	return items, nil
 }
 
-const getTeamById = `-- name: GetTeamById :one
-SELECT id, name, created_at, updated_at, org_id FROM teams
-WHERE id = ?
+const getTeamByName = `-- name: GetTeamByName :one
+SELECT id, name, created_at, updated_at, description, owner_id FROM teams
+WHERE name = ?
 `
 
-func (q *Queries) GetTeamById(ctx context.Context, id string) (Team, error) {
-	row := q.db.QueryRowContext(ctx, getTeamById, id)
+func (q *Queries) GetTeamByName(ctx context.Context, name string) (Team, error) {
+	row := q.db.QueryRowContext(ctx, getTeamByName, name)
 	var i Team
 	err := row.Scan(
 		&i.ID,
 		&i.Name,
 		&i.CreatedAt,
 		&i.UpdatedAt,
-		&i.OrgID,
+		&i.Description,
+		&i.OwnerID,
 	)
 	return i, err
+}
+
+const getTeamsByOwnerID = `-- name: GetTeamsByOwnerID :many
+SELECT id, name, created_at, updated_at, description, owner_id FROM teams
+WHERE owner_id = ?
+`
+
+func (q *Queries) GetTeamsByOwnerID(ctx context.Context, ownerID string) ([]Team, error) {
+	rows, err := q.db.QueryContext(ctx, getTeamsByOwnerID, ownerID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Team
+	for rows.Next() {
+		var i Team
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.Description,
+			&i.OwnerID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const updateTeam = `-- name: UpdateTeam :execresult
+UPDATE teams
+SET name = ?, description = ?, updated_at = ?
+WHERE id = ?
+`
+
+type UpdateTeamParams struct {
+	Name        string
+	Description sql.NullString
+	UpdatedAt   time.Time
+	ID          string
+}
+
+func (q *Queries) UpdateTeam(ctx context.Context, arg UpdateTeamParams) (sql.Result, error) {
+	return q.db.ExecContext(ctx, updateTeam,
+		arg.Name,
+		arg.Description,
+		arg.UpdatedAt,
+		arg.ID,
+	)
 }

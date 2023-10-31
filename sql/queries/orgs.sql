@@ -1,13 +1,13 @@
 -- name: CreateOrg :execresult
-INSERT INTO orgs(id, name, description, creator_id, created_at, updated_at)
+INSERT INTO orgs(id, name, description, owner_id, created_at, updated_at)
 VALUES (?, ?, ?, ?, ?, ?);
 
 -- name: GetAllOrgs :many
 SELECT * FROM orgs;
 
--- name: GetOrgByID :one
+-- name: GetOrgByName :one
 SELECT * FROM orgs
-WHERE id = ?;
+WHERE name = ?;
 
 -- name: UpdateOrg :execresult
 UPDATE orgs

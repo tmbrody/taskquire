@@ -5,6 +5,10 @@ VALUES (?, ?, ?, ?, ?, ?);
 -- name: GetAllUsers :many
 SELECT * FROM users;
 
+-- name: GetUserByName :one
+SELECT * FROM users
+WHERE name = ?;
+
 -- name: UpdateUser :execresult
 UPDATE users
 SET name = ?, email = ?, password = ?, updated_at = ?

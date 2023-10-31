@@ -26,14 +26,19 @@ func SetupRoutes(r *gin.Engine) {
 func SetupApiRoutes(r *gin.RouterGroup) {
 	r.POST("/orgs", handlers.CreateOrgHandler)
 	r.GET("/orgs", handlers.GetOrgsHandler)
-	r.PUT("/orgs", handlers.UpdateOrgHandler)
+	r.GET("/orgs/:orgName", handlers.GetOneOrgHandler)
+	r.PUT("/orgs/:orgName", handlers.UpdateOrgHandler)
 	r.DELETE("/orgs", handlers.DeleteOrgHandler)
 
 	r.POST("/teams", handlers.CreateTeamHandler)
 	r.GET("/teams", handlers.GetTeamsHandler)
+	r.GET("/teams/:teamName", handlers.GetOneTeamHandler)
+	r.PUT("/teams/:teamName", handlers.UpdateTeamHandler)
+	r.DELETE("/teams/:teamName", handlers.DeleteTeamHandler)
 
 	r.POST("/users", handlers.CreateUserHandler)
 	r.GET("/users", handlers.GetUsersHandler)
+	r.GET("/users/:userName", handlers.GetOneUserHandler)
 	r.PUT("/users", handlers.UpdateUserHandler)
 	r.DELETE("/users", handlers.DeleteUserHandler)
 
@@ -41,9 +46,15 @@ func SetupApiRoutes(r *gin.RouterGroup) {
 	r.POST("/refresh", handlers.RefreshTokenHandler)
 	r.POST("/revoke", handlers.RevokeTokenHandler)
 
-	r.POST("/projects", handlers.CreateProjectHandler)
-	r.GET("/projects", handlers.GetProjectsHandler)
+	r.POST("/orgs/:orgName/projects", handlers.CreateProjectHandler)
+	r.GET("/orgs/:orgName/projects", handlers.GetProjectsHandler)
+	r.GET("/orgs/:orgName/projects/:projectName", handlers.GetOneProjectHandler)
+	r.PUT("/orgs/:orgName/projects/:projectName", handlers.UpdateProjectHandler)
+	r.DELETE("/orgs/:orgName/projects/:projectName", handlers.DeleteProjectHandler)
 
-	r.POST("/tasks", handlers.CreateTaskHandler)
-	r.GET("/tasks", handlers.GetTasksHandler)
+	r.POST("/orgs/:orgName/projects/:projectName/tasks", handlers.CreateTaskHandler)
+	r.GET("/orgs/:orgName/projects/:projectName/tasks", handlers.GetTasksHandler)
+	r.GET("/orgs/:orgName/projects/:projectName/tasks/:taskName", handlers.GetOneTaskHandler)
+	r.PUT("/orgs/:orgName/projects/:projectName/tasks/:taskName", handlers.UpdateTaskHandler)
+	r.DELETE("/orgs/:orgName/projects/:projectName/tasks/:taskName", handlers.DeleteTaskHandler)
 }
