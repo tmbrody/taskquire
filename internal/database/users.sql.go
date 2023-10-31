@@ -79,6 +79,25 @@ func (q *Queries) GetAllUsers(ctx context.Context) ([]User, error) {
 	return items, nil
 }
 
+const getUserByName = `-- name: GetUserByName :one
+SELECT id, name, email, password, created_at, updated_at FROM users
+WHERE name = ?
+`
+
+func (q *Queries) GetUserByName(ctx context.Context, name string) (User, error) {
+	row := q.db.QueryRowContext(ctx, getUserByName, name)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Email,
+		&i.Password,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const updateUser = `-- name: UpdateUser :execresult
 UPDATE users
 SET name = ?, email = ?, password = ?, updated_at = ?

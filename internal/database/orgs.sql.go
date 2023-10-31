@@ -12,7 +12,7 @@ import (
 )
 
 const createOrg = `-- name: CreateOrg :execresult
-INSERT INTO orgs(id, name, description, creator_id, created_at, updated_at)
+INSERT INTO orgs(id, name, description, owner_id, created_at, updated_at)
 VALUES (?, ?, ?, ?, ?, ?)
 `
 
@@ -20,7 +20,7 @@ type CreateOrgParams struct {
 	ID          string
 	Name        string
 	Description string
-	CreatorID   string
+	OwnerID     string
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
 }
@@ -30,7 +30,7 @@ func (q *Queries) CreateOrg(ctx context.Context, arg CreateOrgParams) (sql.Resul
 		arg.ID,
 		arg.Name,
 		arg.Description,
-		arg.CreatorID,
+		arg.OwnerID,
 		arg.CreatedAt,
 		arg.UpdatedAt,
 	)
@@ -46,7 +46,7 @@ func (q *Queries) DeleteOrg(ctx context.Context, id string) (sql.Result, error) 
 }
 
 const getAllOrgs = `-- name: GetAllOrgs :many
-SELECT id, name, created_at, updated_at, description, creator_id FROM orgs
+SELECT id, name, created_at, updated_at, description, owner_id FROM orgs
 `
 
 func (q *Queries) GetAllOrgs(ctx context.Context) ([]Org, error) {
@@ -64,7 +64,7 @@ func (q *Queries) GetAllOrgs(ctx context.Context) ([]Org, error) {
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.Description,
-			&i.CreatorID,
+			&i.OwnerID,
 		); err != nil {
 			return nil, err
 		}
@@ -79,13 +79,13 @@ func (q *Queries) GetAllOrgs(ctx context.Context) ([]Org, error) {
 	return items, nil
 }
 
-const getOrgByID = `-- name: GetOrgByID :one
-SELECT id, name, created_at, updated_at, description, creator_id FROM orgs
-WHERE id = ?
+const getOrgByName = `-- name: GetOrgByName :one
+SELECT id, name, created_at, updated_at, description, owner_id FROM orgs
+WHERE name = ?
 `
 
-func (q *Queries) GetOrgByID(ctx context.Context, id string) (Org, error) {
-	row := q.db.QueryRowContext(ctx, getOrgByID, id)
+func (q *Queries) GetOrgByName(ctx context.Context, name string) (Org, error) {
+	row := q.db.QueryRowContext(ctx, getOrgByName, name)
 	var i Org
 	err := row.Scan(
 		&i.ID,
@@ -93,7 +93,7 @@ func (q *Queries) GetOrgByID(ctx context.Context, id string) (Org, error) {
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.Description,
-		&i.CreatorID,
+		&i.OwnerID,
 	)
 	return i, err
 }

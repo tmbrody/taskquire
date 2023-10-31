@@ -2,13 +2,19 @@
 INSERT INTO projects(id, name, description, org_id, created_at, updated_at)
 VALUES (?, ?, ?, ?, ?, ?);
 
--- name: GetAllProjects :many
-SELECT * FROM projects;
-
--- name: GetProjectByID :one
+-- name: GetProjectByName :one
 SELECT * FROM projects
-WHERE id = ?;
+WHERE name = ?;
 
 -- name: GetProjectsByOrgID :many
 SELECT * FROM projects
 WHERE org_id = ?;
+
+-- name: UpdateProject :execresult
+UPDATE projects
+SET name = ?, description = ?, updated_at = ?
+WHERE id = ?;
+
+-- name: DeleteProject :execresult
+DELETE FROM projects
+WHERE id = ?;
