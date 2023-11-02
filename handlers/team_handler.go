@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"database/sql"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -39,8 +40,6 @@ func CreateTeamHandler(c *gin.Context) {
 
 	// Extract the user ID from the JWT token's claims.
 	userID := token.Claims.(jwt.MapClaims)["Subject"].(string)
-
-	// Check if user ID couldn't be extracted from the token.
 	if userID == "" {
 		c.XML(http.StatusInternalServerError, gin.H{
 			"error": "Unable to get user ID from JWT token",
@@ -170,17 +169,46 @@ func GetOneTeamHandler(c *gin.Context) {
 		return
 	}
 
-	// Prepare the result data to be sent back as an XML response
-	result := database.Team{
-		Name:        team.Name,
-		Description: team.Description,
-		OwnerID:     team.OwnerID,
-		CreatedAt:   team.CreatedAt,
-		UpdatedAt:   team.UpdatedAt,
+	users, err := db.GetAllUsersFromTeam(c, team.ID)
+	if err != nil {
+		// If there is an error while getting the team, return an internal server error response
+		c.XML(http.StatusInternalServerError, gin.H{
+			"error": "Unable to get team users",
+		})
+		return
 	}
 
+	// get the names of all the users in the team
+	var userNames []string
+	for _, user := range users {
+		u, err := db.GetUserByID(c, user.UserID)
+		if err != nil {
+			// If there is an error while getting the team, return an internal server error response
+			c.XML(http.StatusInternalServerError, gin.H{
+				"error": "Unable to get team user name",
+			})
+			return
+		}
+
+		userNames = append(userNames, u.Name)
+	}
+
+	userList := UserList{Users: userNames}
+
+	// Create a slice to hold the team data in a map format
+	var teamMap []gin.H
+	teamMap = append(teamMap, gin.H{
+		"ID":          team.ID,
+		"Name":        team.Name,
+		"Description": team.Description,
+		"OwnerID":     team.OwnerID,
+		"CreatedAt":   team.CreatedAt,
+		"UpdatedAt":   team.UpdatedAt,
+		"Users":       userList,
+	})
+
 	// Return the public information of the team as an XML response
-	c.XML(http.StatusOK, result)
+	c.XML(http.StatusOK, teamMap)
 }
 
 // UpdateTeamHandler handles requests to update team information.
@@ -193,8 +221,11 @@ func UpdateTeamHandler(c *gin.Context) {
 		return
 	}
 
+	// Get the team name from the parameter.
+	teamNameParam := c.Param("teamName")
+
 	// Verify that the user owns the team based on the token.
-	team := VerifyTeamOwnership(c, token, db)
+	team := VerifyTeamOwnership(c, token, db, teamNameParam)
 
 	// If the team is not found or the user doesn't own it, return early.
 	if team.ID == "" {
@@ -248,13 +279,87 @@ func UpdateTeamHandler(c *gin.Context) {
 	if err != nil {
 		// If there is an error updating the team, respond with an Internal Server Error status and an error message.
 		c.XML(http.StatusInternalServerError, gin.H{
-			"error": "Unable to update team",
+			"error": fmt.Sprintf("Unable to update %s", team.Name),
 		})
 		return
 	}
 
 	// Respond with a success status and the updated team information.
 	c.XML(http.StatusOK, args)
+}
+
+func AddUserToTeamHandler(c *gin.Context) {
+	// Extract the user, team and database connection from the context.
+	user, team, db := GetUserAndTeamByParam(c)
+
+	// If the user is not found, return early.
+	if user.ID == "" {
+		return
+	}
+
+	// Prepare the arguments for updating the team in the database.
+	args := database.AddUsertoTeamParams{
+		UserID: user.ID,
+		TeamID: team.ID,
+	}
+
+	// Update the team in the database.
+	_, err := db.AddUsertoTeam(c, args)
+	if err != nil {
+		// If there is an error updating the team, respond with a Bad Request status and an error message.
+		c.XML(http.StatusBadRequest, gin.H{
+			"error": fmt.Sprintf("Unable to add %s to %s", user.Name, team.Name),
+		})
+		return
+	}
+
+	// Respond with a success status and the updated team information.
+	c.XML(http.StatusOK, fmt.Sprintf("%s has been added to %s", user.Name, team.Name))
+}
+
+func RemoveUserFromTeamHandler(c *gin.Context) {
+	// Extract the user, team and database connection from the context.
+	user, team, db := GetUserAndTeamByParam(c)
+
+	// If the user is not found, return early.
+	if user.ID == "" {
+		return
+	}
+
+	args_get := database.GetOneUserFromTeamParams{
+		UserID: user.ID,
+		TeamID: team.ID,
+	}
+
+	_, err := db.GetOneUserFromTeam(c, args_get)
+	if err != nil {
+		// If there is an error updating the team, respond with a Bad Request status and an error message.
+		c.XML(http.StatusBadRequest, gin.H{
+			"error": fmt.Sprintf("Unable to find %s in %s", user.Name, team.Name),
+		})
+		return
+	}
+
+	// Prepare the arguments for updating the team in the database.
+	args_remove := database.RemoveUserFromTeamParams{
+		UserID: user.ID,
+		TeamID: team.ID,
+	}
+
+	// Update the team in the database.
+	_, err = db.RemoveUserFromTeam(c, args_remove)
+	if err != nil {
+		// If there is an error updating the team, respond with an Internal Server Error status and an error message
+		c.XML(http.StatusInternalServerError, gin.H{
+			"error": fmt.Sprintf("Unable to remove %s from %s", user.Name, team.Name),
+		})
+		return
+	}
+
+	// Respond with a success status and the updated team information.
+	c.XML(http.StatusOK, gin.H{
+		"message": fmt.Sprintf("%s has been removed from %s", user.Name, team.Name),
+	})
 }
 
 // DeleteTeamHandler is a function that handles the deletion of an team.
@@ -267,8 +372,11 @@ func DeleteTeamHandler(c *gin.Context) {
 		return
 	}
 
+	// Get the team name from the parameter.
+	teamNameParam := c.Param("teamName")
+
 	// Verify ownership of the team associated with the token.
-	team := VerifyTeamOwnership(c, token, db)
+	team := VerifyTeamOwnership(c, token, db, teamNameParam)
 
 	// If the team does not exist or there's an issue with ownership verification, return early.
 	if team.ID == "" {
@@ -280,11 +388,13 @@ func DeleteTeamHandler(c *gin.Context) {
 	// If there's an error during the deletion process, return an error response.
 	if err != nil {
 		c.XML(http.StatusInternalServerError, gin.H{
-			"error": "Unable to delete team",
+			"error": fmt.Sprintf("Unable to delete %s", team.Name),
 		})
 		return
 	}
 
 	// Respond with a success status and a message indicating the team was deleted.
-	c.XML(http.StatusOK, "Team has been deleted successfully")
+	c.XML(http.StatusOK, gin.H{
+		"message": fmt.Sprintf("%s has been deleted", team.Name),
+	})
 }

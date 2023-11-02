@@ -1,7 +1,9 @@
 package handlers
 
 import (
+	"encoding/xml"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
@@ -9,6 +11,24 @@ import (
 	"github.com/tmbrody/taskquire/internal/database"
 	"github.com/tmbrody/taskquire/tokenPackage"
 )
+
+type UserList struct {
+	Users []string
+}
+
+type TeamList struct {
+	Teams []string
+}
+
+func (u UserList) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
+	users := strings.Join(u.Users, ", ")
+	return e.EncodeElement(users, start)
+}
+
+func (t TeamList) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
+	teams := strings.Join(t.Teams, ", ")
+	return e.EncodeElement(teams, start)
+}
 
 // ExtractDBAndToken is a function that extracts a JWT token, its corresponding string,
 // and a database connection from a Gin context.
@@ -66,10 +86,7 @@ func ExtractDBAndToken(c *gin.Context) (*jwt.Token, string, *database.Queries) {
 	return token, tokenString, db
 }
 
-func VerifyTeamOwnership(c *gin.Context, token *jwt.Token, db *database.Queries) database.Team {
-	// Get the team name from the parameter.
-	teamNameParam := c.Param("teamName")
-
+func VerifyTeamOwnership(c *gin.Context, token *jwt.Token, db *database.Queries, teamNameParam string) database.Team {
 	// Check if the team name is missing. If so, return a Bad Request response.
 	if teamNameParam == "" {
 		c.XML(http.StatusBadRequest, gin.H{
@@ -226,4 +243,48 @@ func GetTaskByParamName(c *gin.Context) (database.Task, *database.Queries) {
 	}
 
 	return task, db
+}
+
+func GetUserAndTeamByParam(c *gin.Context) (database.User, database.Team, *database.Queries) {
+	// Extract the authentication token, database connection, and user from the context.
+	token, _, db := ExtractDBAndToken(c)
+
+	// If the authentication token is not present, return early.
+	if token == nil {
+		return database.User{}, database.Team{}, nil
+	}
+
+	// Define a struct to hold the parameters received in the XML request.
+	var params struct {
+		User string `XML:"name"`
+		Team string `XML:"name"`
+	}
+
+	// Bind the XML request body to the params struct.
+	if err := c.ShouldBindXML(&params); err != nil {
+		// If there is an error binding the XML, respond with a Bad Request status and an error message.
+		c.XML(http.StatusBadRequest, gin.H{
+			"error": "Invalid XML",
+		})
+		return database.User{}, database.Team{}, nil
+	}
+
+	// Verify that the user owns the team based on the token.
+	team := VerifyTeamOwnership(c, token, db, params.Team)
+
+	// If the team is not found or the user doesn't own it, return early.
+	if team.ID == "" {
+		return database.User{}, database.Team{}, nil
+	}
+
+	user, err := db.GetUserByName(c, params.User)
+	if err != nil {
+		// If there is an error binding the XML, respond with a Bad Request status and an error message.
+		c.XML(http.StatusBadRequest, gin.H{
+			"error": "Invalid XML",
+		})
+		return database.User{}, database.Team{}, nil
+	}
+
+	return user, team, db
 }

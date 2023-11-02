@@ -171,16 +171,44 @@ func GetOneUserHandler(c *gin.Context) {
 		return
 	}
 
-	// Prepare the result data to be sent back as an XML response
-	result := database.User{
-		Name:      user.Name,
-		Email:     user.Email,
-		CreatedAt: user.CreatedAt,
-		UpdatedAt: user.UpdatedAt,
+	teams, err := db.GetAllTeamsByUser(c, user.ID)
+	if err != nil {
+		// If there is an error while getting the team, return an internal server error response
+		c.XML(http.StatusInternalServerError, gin.H{
+			"error": "Unable to get team users",
+		})
+		return
 	}
 
-	// Return the public information of the user as an XML response
-	c.XML(http.StatusOK, result)
+	// Get the names of all the teams for the user
+	var teamNames []string
+	for _, team := range teams {
+		t, err := db.GetTeamByID(c, team.TeamID)
+		if err != nil {
+			// If there is an error while getting the team, return an internal server error response
+			c.XML(http.StatusInternalServerError, gin.H{
+				"error": "Unable to get team user name",
+			})
+			return
+		}
+
+		teamNames = append(teamNames, t.Name)
+	}
+
+	teamList := TeamList{Teams: teamNames}
+
+	// Create a slice to hold the team data in a map format
+	var teamMap []gin.H
+	teamMap = append(teamMap, gin.H{
+		"ID":        user.ID,
+		"Name":      user.Name,
+		"CreatedAt": user.CreatedAt,
+		"UpdatedAt": user.UpdatedAt,
+		"Teams":     teamList,
+	})
+
+	// Return the public information of the team as an XML response
+	c.XML(http.StatusOK, teamMap)
 }
 
 // UpdateUserHandler is an HTTP handler function for updating user information.
