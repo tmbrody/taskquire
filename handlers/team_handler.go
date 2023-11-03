@@ -169,6 +169,7 @@ func GetOneTeamHandler(c *gin.Context) {
 		return
 	}
 
+	// Get all the users in the team
 	users, err := db.GetAllUsersFromTeam(c, team.ID)
 	if err != nil {
 		// If there is an error while getting the team, return an internal server error response
@@ -225,7 +226,7 @@ func UpdateTeamHandler(c *gin.Context) {
 	teamNameParam := c.Param("teamName")
 
 	// Verify that the user owns the team based on the token.
-	team := VerifyTeamOwnership(c, token, db, teamNameParam)
+	team := VerifyTeamOwnershipFromParam(c, token, db, teamNameParam)
 
 	// If the team is not found or the user doesn't own it, return early.
 	if team.ID == "" {
@@ -376,7 +377,7 @@ func DeleteTeamHandler(c *gin.Context) {
 	teamNameParam := c.Param("teamName")
 
 	// Verify ownership of the team associated with the token.
-	team := VerifyTeamOwnership(c, token, db, teamNameParam)
+	team := VerifyTeamOwnershipFromParam(c, token, db, teamNameParam)
 
 	// If the team does not exist or there's an issue with ownership verification, return early.
 	if team.ID == "" {

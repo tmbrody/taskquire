@@ -12,11 +12,11 @@ import (
 )
 
 func CreateTaskHandler(c *gin.Context) {
-	// Get the project from the context.
-	project, db := GetProjectByParamName(c)
+	// Get the project and team from the context.
+	project, team, db, userID := VerifyTeamMembershipAndGetProject(c)
 
-	// If project has no name, return early without further processing.
-	if project.Name == "" {
+	// If team has no name, return early without further processing.
+	if team.Name == "" {
 		return
 	}
 
@@ -62,6 +62,8 @@ func CreateTaskHandler(c *gin.Context) {
 		CreatedAt:   time.Now(),
 		UpdatedAt:   time.Now(),
 		ProjectID:   project.ID,
+		TeamID:      team.ID,
+		OwnerID:     userID,
 	}
 
 	// Create a new task in the database.
@@ -79,11 +81,11 @@ func CreateTaskHandler(c *gin.Context) {
 }
 
 func GetTasksHandler(c *gin.Context) {
-	// Get the project from the context.
-	project, db := GetProjectByParamName(c)
+	// Get the project and team from the context.
+	project, team, db, _ := VerifyTeamMembershipAndGetProject(c)
 
-	// If project has no name, return early without further processing.
-	if project.Name == "" {
+	// If team has no name, return early without further processing.
+	if team.Name == "" {
 		return
 	}
 
@@ -108,6 +110,8 @@ func GetTasksHandler(c *gin.Context) {
 			"CreatedAt":   task.CreatedAt,
 			"UpdatedAt":   task.UpdatedAt,
 			"ProjectID":   task.ProjectID,
+			"TeamID":      task.TeamID,
+			"OwnerID":     task.OwnerID,
 		})
 	}
 
@@ -150,17 +154,20 @@ func GetOneTaskHandler(c *gin.Context) {
 		return
 	}
 
-	// Prepare the result data to be sent back as an XML response
-	result := database.Task{
-		Name:        task.Name,
-		Description: task.Description,
-		ProjectID:   task.ProjectID,
-		CreatedAt:   task.CreatedAt,
-		UpdatedAt:   task.UpdatedAt,
-	}
+	// Create a slice to hold the task data in a map format
+	var taskMap []gin.H
+	taskMap = append(taskMap, gin.H{
+		"ID":          task.ID,
+		"Name":        task.Name,
+		"Description": task.Description,
+		"ProjectID":   task.ProjectID,
+		"TeamID":      task.TeamID,
+		"CreatedAt":   task.CreatedAt,
+		"UpdatedAt":   task.UpdatedAt,
+	})
 
 	// Return the public information of the task as an XML response
-	c.XML(http.StatusOK, result)
+	c.XML(http.StatusOK, taskMap)
 }
 
 func UpdateTaskHandler(c *gin.Context) {

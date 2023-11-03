@@ -12,17 +12,19 @@ import (
 )
 
 const createTask = `-- name: CreateTask :execresult
-INSERT INTO tasks(id, name, description, created_at, updated_at, project_id)
-VALUES (?, ?, ?, ?, ?, ?)
+INSERT INTO tasks(id, name, description, project_id, team_id, owner_id, created_at, updated_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 `
 
 type CreateTaskParams struct {
 	ID          string
 	Name        string
 	Description sql.NullString
+	ProjectID   string
+	TeamID      string
+	OwnerID     string
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
-	ProjectID   string
 }
 
 func (q *Queries) CreateTask(ctx context.Context, arg CreateTaskParams) (sql.Result, error) {
@@ -30,9 +32,11 @@ func (q *Queries) CreateTask(ctx context.Context, arg CreateTaskParams) (sql.Res
 		arg.ID,
 		arg.Name,
 		arg.Description,
+		arg.ProjectID,
+		arg.TeamID,
+		arg.OwnerID,
 		arg.CreatedAt,
 		arg.UpdatedAt,
-		arg.ProjectID,
 	)
 }
 
@@ -46,7 +50,7 @@ func (q *Queries) DeleteTask(ctx context.Context, id string) (sql.Result, error)
 }
 
 const getTaskByName = `-- name: GetTaskByName :one
-SELECT id, name, description, created_at, updated_at, project_id FROM tasks
+SELECT id, name, description, created_at, updated_at, project_id, team_id, owner_id FROM tasks
 WHERE name = ?
 `
 
@@ -60,12 +64,14 @@ func (q *Queries) GetTaskByName(ctx context.Context, name string) (Task, error) 
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.ProjectID,
+		&i.TeamID,
+		&i.OwnerID,
 	)
 	return i, err
 }
 
 const getTasksByProjectID = `-- name: GetTasksByProjectID :many
-SELECT id, name, description, created_at, updated_at, project_id FROM tasks
+SELECT id, name, description, created_at, updated_at, project_id, team_id, owner_id FROM tasks
 WHERE project_id = ?
 `
 
@@ -85,6 +91,8 @@ func (q *Queries) GetTasksByProjectID(ctx context.Context, projectID string) ([]
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.ProjectID,
+			&i.TeamID,
+			&i.OwnerID,
 		); err != nil {
 			return nil, err
 		}

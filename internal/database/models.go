@@ -39,6 +39,8 @@ type Task struct {
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
 	ProjectID   string
+	TeamID      string
+	OwnerID     string
 }
 
 type Team struct {

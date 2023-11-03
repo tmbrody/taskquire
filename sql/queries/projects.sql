@@ -6,6 +6,10 @@ VALUES (?, ?, ?, ?, ?, ?);
 SELECT * FROM projects
 WHERE name = ?;
 
+-- name: GetProjectByID :one
+SELECT * FROM projects
+WHERE id = ?;
+
 -- name: GetProjectsByOrgID :many
 SELECT * FROM projects
 WHERE org_id = ?;
