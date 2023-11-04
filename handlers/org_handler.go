@@ -11,22 +11,23 @@ import (
 	"github.com/tmbrody/taskquire/internal/database"
 )
 
+// CreateOrgHandler handles the creation of a new organization.
 func CreateOrgHandler(c *gin.Context) {
-	// Extract token, database connection, and user information from the request context.
+	// Extract token, database connection, and user ID from the context.
 	token, _, db := ExtractDBAndToken(c)
 
-	// Check if the token is missing.
+	// If the token is nil, return.
 	if token == nil {
 		return
 	}
 
-	// Define a struct to hold parameters extracted from XML request.
+	// Define a struct to hold XML request parameters.
 	var params struct {
 		Name        string `XML:"name"`
 		Description string `XML:"description"`
 	}
 
-	// Bind XML request body to the 'params' struct.
+	// Bind XML request to the params struct.
 	if err := c.ShouldBindXML(&params); err != nil {
 		c.XML(http.StatusBadRequest, gin.H{
 			"error": "Invalid XML",
@@ -34,10 +35,10 @@ func CreateOrgHandler(c *gin.Context) {
 		return
 	}
 
-	// Extract the user ID from the JWT token's claims.
+	// Get the user ID from the JWT token.
 	userID := token.Claims.(jwt.MapClaims)["Subject"].(string)
 
-	// Check if user ID couldn't be extracted from the token.
+	// If the user ID is empty, return an error.
 	if userID == "" {
 		c.XML(http.StatusInternalServerError, gin.H{
 			"error": "Unable to get user ID from JWT token",
@@ -45,10 +46,10 @@ func CreateOrgHandler(c *gin.Context) {
 		return
 	}
 
-	// Generate a new UUID as the organization ID.
+	// Generate a new organization ID.
 	orgID, err := uuid.NewUUID()
 
-	// Check if there was an error generating the organization ID.
+	// If there's an error generating the ID, return an error.
 	if err != nil {
 		c.XML(http.StatusBadRequest, gin.H{
 			"error": "Unable to generate organization ID",
@@ -56,7 +57,7 @@ func CreateOrgHandler(c *gin.Context) {
 		return
 	}
 
-	// Prepare arguments for creating a new organization in the database.
+	// Create arguments for creating a new organization.
 	args := database.CreateOrgParams{
 		ID:          orgID.String(),
 		Name:        params.Name,
@@ -66,43 +67,46 @@ func CreateOrgHandler(c *gin.Context) {
 		UpdatedAt:   time.Now(),
 	}
 
-	// Create a new organization in the database.
+	// Create the new organization in the database.
 	_, err = db.CreateOrg(c, args)
 
-	// Check if there was an error creating the organization.
+	// If there's an error creating the organization, return an error.
 	if err != nil {
 		c.XML(http.StatusInternalServerError, gin.H{
-			"error": "Unable to create new organization",
+			"error": "Unable to create a new organization",
 		})
 		return
 	}
 
-	// Respond with the created organization details.
+	// Return the created organization data.
 	c.XML(http.StatusCreated, args)
 }
 
+// GetOrgsHandler retrieves a list of all organizations.
 func GetOrgsHandler(c *gin.Context) {
-	// Get the database connection from the context
+	// Retrieve the database connection from the context.
 	db, errBool := c.Value(string(config.DbContextKey)).(*database.Queries)
+
+	// If there's an error retrieving the database connection, return an error.
 	if !errBool {
-		// If unable to get the database connection, return an internal server error response
 		c.XML(http.StatusInternalServerError, gin.H{
-			"error": "Unable to get database connection",
+			"error": "Unable to get a database connection",
 		})
 		return
 	}
 
-	// Retrieve all organizations from the database
+	// Get all organizations from the database.
 	orgs, err := db.GetAllOrgs(c)
+
+	// If there's an error retrieving organizations, return an error.
 	if err != nil {
-		// If there is an error while getting organizations, return an internal server error response
 		c.XML(http.StatusInternalServerError, gin.H{
 			"error": "Unable to get organizations",
 		})
 		return
 	}
 
-	// Map the organization data into a slice of maps for XML serialization
+	// Create a list of organization data to return.
 	var orgMap []gin.H
 	for _, org := range orgs {
 		orgMap = append(orgMap, gin.H{
@@ -115,28 +119,29 @@ func GetOrgsHandler(c *gin.Context) {
 		})
 	}
 
-	// Return the list of organizations as an XML response
+	// Return the list of organizations.
 	c.XML(http.StatusOK, gin.H{
 		"Orgs": orgMap,
 	})
 }
 
-// GetOneOrgHandler is a handler function that retrieves a single organization based on a name from the database and responds with XML data.
+// GetOneOrgHandler retrieves information about a specific organization by its name.
 func GetOneOrgHandler(c *gin.Context) {
-	// Get the database connection from the context
+	// Retrieve the database connection from the context.
 	db, errBool := c.Value(string(config.DbContextKey)).(*database.Queries)
+
+	// If there's an error retrieving the database connection, return an error.
 	if !errBool {
-		// If unable to get the database connection, return an internal server error response
 		c.XML(http.StatusInternalServerError, gin.H{
-			"error": "Unable to get database connection",
+			"error": "Unable to get a database connection",
 		})
 		return
 	}
 
-	// Get the organization name from the parameter.
+	// Get the organization name from the request parameter.
 	orgNameParam := c.Param("orgName")
 
-	// Check if the organization name is missing. If so, return a Bad Request response.
+	// If the organization name is missing, return an error.
 	if orgNameParam == "" {
 		c.XML(http.StatusBadRequest, gin.H{
 			"error": "Organization name is missing",
@@ -144,17 +149,18 @@ func GetOneOrgHandler(c *gin.Context) {
 		return
 	}
 
-	// Retrieve an organization with a certain name from the database
+	// Get the organization by name from the database.
 	org, err := db.GetOrgByName(c, orgNameParam)
+
+	// If there's an error retrieving the organization, return an error.
 	if err != nil {
-		// If there is an error while getting the organization, return an internal server error response
 		c.XML(http.StatusInternalServerError, gin.H{
-			"error": "Unable to get organization",
+			"error": "Unable to get the organization",
 		})
 		return
 	}
 
-	// Prepare the result data to be sent back as an XML response
+	// Create a result struct with organization data to return.
 	result := database.Org{
 		Name:        org.Name,
 		Description: org.Description,
@@ -163,56 +169,54 @@ func GetOneOrgHandler(c *gin.Context) {
 		UpdatedAt:   org.UpdatedAt,
 	}
 
-	// Return the public information of the organization as an XML response
+	// Return the organization data.
 	c.XML(http.StatusOK, result)
 }
 
-// UpdateOrgHandler handles requests to update organization information.
+// UpdateOrgHandler updates an organization's information.
 func UpdateOrgHandler(c *gin.Context) {
-	// Extract the authentication token, database connection, and user from the context.
+	// Extract token, database connection, and organization information.
 	token, _, db := ExtractDBAndToken(c)
 
-	// If the authentication token is not present, return early.
+	// If the token is nil, return.
 	if token == nil {
 		return
 	}
 
-	// Verify that the user owns the organization based on the token.
+	// Verify ownership of the organization.
 	org := VerifyOrgOwnership(c, token, db)
 
-	// If the organization is not found or the user doesn't own it, return early.
+	// If the organization ID is empty, return.
 	if org.ID == "" {
 		return
 	}
 
-	// Define a struct to hold the parameters received in the XML request.
+	// Define a struct to hold XML request parameters.
 	var params struct {
 		Name        string `XML:"name"`
 		Description string `XML:"description"`
 	}
 
-	// Bind the XML request body to the params struct.
+	// Bind XML request to the params struct.
 	if err := c.ShouldBindXML(&params); err != nil {
-		// If there is an error binding the XML, respond with a Bad Request status and an error message.
 		c.XML(http.StatusBadRequest, gin.H{
 			"error": "Invalid XML",
 		})
 		return
 	}
 
-	// Get the organization name from the params or use the current organization name if it's empty.
+	// Set the organization name and description based on the request or existing values.
 	orgName := params.Name
 	if orgName == "" {
 		orgName = org.Name
 	}
 
-	// Get the organization description from the params or use the current organization description if it's empty.
 	orgDescription := params.Description
 	if orgDescription == "" {
 		orgDescription = org.Description
 	}
 
-	// Prepare the arguments for updating the organization in the database.
+	// Create arguments for updating the organization.
 	args := database.UpdateOrgParams{
 		ID:          org.ID,
 		Name:        orgName,
@@ -222,46 +226,48 @@ func UpdateOrgHandler(c *gin.Context) {
 
 	// Update the organization in the database.
 	_, err := db.UpdateOrg(c, args)
+
+	// If there's an error updating the organization, return an error.
 	if err != nil {
-		// If there is an error updating the organization, respond with an Internal Server Error status and an error message.
 		c.XML(http.StatusInternalServerError, gin.H{
-			"error": "Unable to update organization",
+			"error": "Unable to update the organization",
 		})
 		return
 	}
 
-	// Respond with a success status and the updated organization information.
+	// Return the updated organization data.
 	c.XML(http.StatusOK, args)
 }
 
-// DeleteOrgHandler is a function that handles the deletion of an organization.
+// DeleteOrgHandler deletes an organization.
 func DeleteOrgHandler(c *gin.Context) {
-	// Extract the token, user ID, and database connection from the request context.
+	// Extract token, database connection, and organization information.
 	token, _, db := ExtractDBAndToken(c)
 
-	// If there's no token, return early without further processing.
+	// If the token is nil, return.
 	if token == nil {
 		return
 	}
 
-	// Verify ownership of the organization associated with the token.
+	// Verify ownership of the organization.
 	org := VerifyOrgOwnership(c, token, db)
 
-	// If the organization does not exist or there's an issue with ownership verification, return early.
+	// If the organization ID is empty, return.
 	if org.ID == "" {
 		return
 	}
 
-	// Attempt to delete the organization from the database.
+	// Delete the organization from the database.
 	_, err := db.DeleteOrg(c, org.ID)
-	// If there's an error during the deletion process, return an error response.
+
+	// If there's an error deleting the organization, return an error.
 	if err != nil {
 		c.XML(http.StatusInternalServerError, gin.H{
-			"error": "Unable to delete organization",
+			"error": "Unable to delete the organization",
 		})
 		return
 	}
 
-	// Respond with a success status and a message indicating the project was deleted.
+	// Return a success message.
 	c.XML(http.StatusOK, "Organization has been deleted successfully")
 }

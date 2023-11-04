@@ -41,6 +41,7 @@ type Task struct {
 	ProjectID   string
 	TeamID      string
 	OwnerID     string
+	ParentID    string
 }
 
 type Team struct {

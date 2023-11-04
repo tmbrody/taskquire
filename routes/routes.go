@@ -28,7 +28,7 @@ func SetupApiRoutes(r *gin.RouterGroup) {
 	r.GET("/orgs", handlers.GetOrgsHandler)
 	r.GET("/orgs/:orgName", handlers.GetOneOrgHandler)
 	r.PUT("/orgs/:orgName", handlers.UpdateOrgHandler)
-	r.DELETE("/orgs", handlers.DeleteOrgHandler)
+	r.DELETE("/orgs/:orgName", handlers.DeleteOrgHandler)
 
 	r.POST("/teams", handlers.CreateTeamHandler)
 	r.GET("/teams", handlers.GetTeamsHandler)
@@ -58,6 +58,8 @@ func SetupApiRoutes(r *gin.RouterGroup) {
 
 	r.POST("/orgs/:orgName/projects/:projectName/teams/:teamName/tasks", handlers.CreateTaskHandler)
 	r.GET("/orgs/:orgName/projects/:projectName/teams/:teamName/tasks", handlers.GetTasksHandler)
+
+	r.POST("/orgs/:orgName/projects/:projectName/teams/:teamName/tasks/:taskName", handlers.CreateTaskHandler)
 	r.GET("/orgs/:orgName/projects/:projectName/teams/:teamName/tasks/:taskName", handlers.GetOneTaskHandler)
 	r.PUT("/orgs/:orgName/projects/:projectName/teams/:teamName/tasks/:taskName", handlers.UpdateTaskHandler)
 	r.DELETE("/orgs/:orgName/projects/:projectName/teams/:teamName/tasks/:taskName", handlers.DeleteTaskHandler)

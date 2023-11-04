@@ -79,6 +79,25 @@ func (q *Queries) GetAllOrgs(ctx context.Context) ([]Org, error) {
 	return items, nil
 }
 
+const getOrgByID = `-- name: GetOrgByID :one
+SELECT id, name, created_at, updated_at, description, owner_id FROM orgs
+WHERE id = ?
+`
+
+func (q *Queries) GetOrgByID(ctx context.Context, id string) (Org, error) {
+	row := q.db.QueryRowContext(ctx, getOrgByID, id)
+	var i Org
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Description,
+		&i.OwnerID,
+	)
+	return i, err
+}
+
 const getOrgByName = `-- name: GetOrgByName :one
 SELECT id, name, created_at, updated_at, description, owner_id FROM orgs
 WHERE name = ?

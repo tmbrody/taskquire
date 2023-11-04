@@ -12,8 +12,8 @@ import (
 )
 
 const createTask = `-- name: CreateTask :execresult
-INSERT INTO tasks(id, name, description, project_id, team_id, owner_id, created_at, updated_at)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+INSERT INTO tasks(id, name, description, project_id, team_id, owner_id, parent_id, created_at, updated_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
 `
 
 type CreateTaskParams struct {
@@ -23,6 +23,7 @@ type CreateTaskParams struct {
 	ProjectID   string
 	TeamID      string
 	OwnerID     string
+	ParentID    string
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
 }
@@ -35,6 +36,7 @@ func (q *Queries) CreateTask(ctx context.Context, arg CreateTaskParams) (sql.Res
 		arg.ProjectID,
 		arg.TeamID,
 		arg.OwnerID,
+		arg.ParentID,
 		arg.CreatedAt,
 		arg.UpdatedAt,
 	)
@@ -49,8 +51,46 @@ func (q *Queries) DeleteTask(ctx context.Context, id string) (sql.Result, error)
 	return q.db.ExecContext(ctx, deleteTask, id)
 }
 
+const getSubtasksByParentID = `-- name: GetSubtasksByParentID :many
+SELECT id, name, description, created_at, updated_at, project_id, team_id, owner_id, parent_id FROM tasks
+WHERE parent_id = ?
+`
+
+func (q *Queries) GetSubtasksByParentID(ctx context.Context, parentID string) ([]Task, error) {
+	rows, err := q.db.QueryContext(ctx, getSubtasksByParentID, parentID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Task
+	for rows.Next() {
+		var i Task
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Description,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.ProjectID,
+			&i.TeamID,
+			&i.OwnerID,
+			&i.ParentID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getTaskByName = `-- name: GetTaskByName :one
-SELECT id, name, description, created_at, updated_at, project_id, team_id, owner_id FROM tasks
+SELECT id, name, description, created_at, updated_at, project_id, team_id, owner_id, parent_id FROM tasks
 WHERE name = ?
 `
 
@@ -66,12 +106,13 @@ func (q *Queries) GetTaskByName(ctx context.Context, name string) (Task, error) 
 		&i.ProjectID,
 		&i.TeamID,
 		&i.OwnerID,
+		&i.ParentID,
 	)
 	return i, err
 }
 
 const getTasksByProjectID = `-- name: GetTasksByProjectID :many
-SELECT id, name, description, created_at, updated_at, project_id, team_id, owner_id FROM tasks
+SELECT id, name, description, created_at, updated_at, project_id, team_id, owner_id, parent_id FROM tasks
 WHERE project_id = ?
 `
 
@@ -93,6 +134,7 @@ func (q *Queries) GetTasksByProjectID(ctx context.Context, projectID string) ([]
 			&i.ProjectID,
 			&i.TeamID,
 			&i.OwnerID,
+			&i.ParentID,
 		); err != nil {
 			return nil, err
 		}

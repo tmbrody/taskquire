@@ -13,41 +13,39 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+// Constants for access and refresh token expiration durations
 const AccessExpiration time.Duration = time.Hour
 const RefreshExpiration time.Duration = 7 * (time.Hour * 24)
 
-// CreateUserHandler is an HTTP handler function that creates a new user in the database
+// CreateUserHandler handles the creation of a new user.
 func CreateUserHandler(c *gin.Context) {
-	// Get a database connection from the context
+	// Retrieve the database connection from the Gin context
 	db, errBool := c.Value(string(config.DbContextKey)).(*database.Queries)
 	if !errBool {
-		// If unable to get the database connection, return an internal server error
 		c.XML(http.StatusInternalServerError, gin.H{
 			"error": "Unable to get database connection",
 		})
 		return
 	}
 
-	// Define a struct to parse incoming XML data into
+	// Parse XML request body into a struct
 	var params struct {
 		Name     string `XML:"name"`
 		Email    string `XML:"email"`
 		Password string `XML:"password"`
 	}
 
-	// Parse the incoming XML request body into the 'params' struct
+	// Check for XML parsing errors
 	if err := c.ShouldBindXML(&params); err != nil {
-		// If there's an error parsing the XML, return a bad request error
 		c.XML(http.StatusBadRequest, gin.H{
 			"error": "Invalid XML",
 		})
 		return
 	}
 
-	// Generate a new UUID for the user ID
+	// Generate a unique user ID
 	userID, err := uuid.NewUUID()
 	if err != nil {
-		// If unable to generate a user ID, return a bad request error
 		c.XML(http.StatusBadRequest, gin.H{
 			"error": "Unable to generate user ID",
 		})
@@ -57,14 +55,13 @@ func CreateUserHandler(c *gin.Context) {
 	// Hash the user's password
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(params.Password), bcrypt.DefaultCost)
 	if err != nil {
-		// If unable to hash the password, return an internal server error
 		c.XML(http.StatusInternalServerError, gin.H{
 			"error": "Unable to hash password",
 		})
 		return
 	}
 
-	// Prepare the user data to be inserted into the database
+	// Create user data and insert it into the database
 	args := database.CreateUserParams{
 		ID:        userID.String(),
 		Name:      params.Name,
@@ -73,18 +70,15 @@ func CreateUserHandler(c *gin.Context) {
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 	}
-
-	// Insert the user data into the database
 	_, err = db.CreateUser(c, args)
 	if err != nil {
-		// If unable to create a new user in the database, return an internal server error
 		c.XML(http.StatusInternalServerError, gin.H{
 			"error": "Unable to create new user",
 		})
 		return
 	}
 
-	// Prepare the result data to be sent back as XML response
+	// Prepare the response and send it
 	result := database.User{
 		ID:        args.ID,
 		Name:      args.Name,
@@ -92,37 +86,32 @@ func CreateUserHandler(c *gin.Context) {
 		CreatedAt: args.CreatedAt,
 		UpdatedAt: args.UpdatedAt,
 	}
-
-	// Return the user data as a successful response with status 201 (Created)
 	c.XML(http.StatusCreated, result)
 }
 
-// GetUsersHandler is an HTTP handler function that retrieves a list of users from the database
+// GetUsersHandler retrieves a list of all users from the database.
 func GetUsersHandler(c *gin.Context) {
-	// Attempt to retrieve the database connection from the Gin context
+	// Retrieve the database connection from the Gin context
 	db, errBool := c.Value(string(config.DbContextKey)).(*database.Queries)
 	if !errBool {
-		// If there's an error retrieving the database connection, respond with an internal server error
 		c.XML(http.StatusInternalServerError, gin.H{
 			"error": "Unable to get database connection",
 		})
 		return
 	}
 
-	// Retrieve the list of users from the database using the db connection
+	// Retrieve all users from the database
 	users, err := db.GetAllUsers(c)
 	if err != nil {
-		// If there's an error retrieving users from the database, respond with an internal server error
 		c.XML(http.StatusInternalServerError, gin.H{
 			"error": "Unable to get users",
 		})
 		return
 	}
 
-	// Create a slice of gin.H maps to hold user data for XML serialization
+	// Prepare the response with user data and send it
 	var userMap []gin.H
 	for _, user := range users {
-		// Populate the userMap with user data
 		userMap = append(userMap, gin.H{
 			"ID":        user.ID,
 			"Name":      user.Name,
@@ -131,29 +120,26 @@ func GetUsersHandler(c *gin.Context) {
 			"UpdatedAt": user.UpdatedAt,
 		})
 	}
-
-	// Respond with the list of users in XML format with a 200 OK status
 	c.XML(http.StatusOK, gin.H{
 		"Users": userMap,
 	})
 }
 
-// GetOneUserHandler is a handler function that retrieves a single user based on a name from the database and responds with XML data.
+// GetOneUserHandler retrieves information about a specific user by username.
 func GetOneUserHandler(c *gin.Context) {
-	// Get the database connection from the context
+	// Retrieve the database connection from the Gin context
 	db, errBool := c.Value(string(config.DbContextKey)).(*database.Queries)
 	if !errBool {
-		// If unable to get the database connection, return an internal server error response
 		c.XML(http.StatusInternalServerError, gin.H{
 			"error": "Unable to get database connection",
 		})
 		return
 	}
 
-	// Get the user name from the parameter.
+	// Get the username from the request parameter
 	userNameParam := c.Param("userName")
 
-	// Check if the user name is missing. If so, return a Bad Request response.
+	// Check if the username is missing
 	if userNameParam == "" {
 		c.XML(http.StatusBadRequest, gin.H{
 			"error": "User name is missing",
@@ -161,43 +147,39 @@ func GetOneUserHandler(c *gin.Context) {
 		return
 	}
 
-	// Retrieve a user with a certain name from the database
+	// Retrieve user data by username from the database
 	user, err := db.GetUserByName(c, userNameParam)
 	if err != nil {
-		// If there is an error while getting the user, return an internal server error response
 		c.XML(http.StatusInternalServerError, gin.H{
 			"error": "Unable to get user",
 		})
 		return
 	}
 
+	// Retrieve teams associated with the user
 	teams, err := db.GetAllTeamsByUser(c, user.ID)
 	if err != nil {
-		// If there is an error while getting the team, return an internal server error response
 		c.XML(http.StatusInternalServerError, gin.H{
 			"error": "Unable to get team users",
 		})
 		return
 	}
 
-	// Get the names of all the teams for the user
+	// Create a list of team names associated with the user
 	var teamNames []string
 	for _, team := range teams {
 		t, err := db.GetTeamByID(c, team.TeamID)
 		if err != nil {
-			// If there is an error while getting the team, return an internal server error response
 			c.XML(http.StatusInternalServerError, gin.H{
 				"error": "Unable to get team user name",
 			})
 			return
 		}
-
 		teamNames = append(teamNames, t.Name)
 	}
 
+	// Prepare the response with user and team data and send it
 	teamList := TeamList{Teams: teamNames}
-
-	// Create a slice to hold the team data in a map format
 	var teamMap []gin.H
 	teamMap = append(teamMap, gin.H{
 		"ID":        user.ID,
@@ -206,25 +188,23 @@ func GetOneUserHandler(c *gin.Context) {
 		"UpdatedAt": user.UpdatedAt,
 		"Teams":     teamList,
 	})
-
-	// Return the public information of the team as an XML response
 	c.XML(http.StatusOK, teamMap)
 }
 
-// UpdateUserHandler is an HTTP handler function for updating user information.
+// UpdateUserHandler updates user information.
 func UpdateUserHandler(c *gin.Context) {
-	// Extract the JWT token and database connection from the request context.
+	// Extract the JWT token, database connection, and token package
 	token, _, db := ExtractDBAndToken(c)
 
-	// If the token is nil, return early.
+	// Check if there is no token
 	if token == nil {
 		return
 	}
 
-	// Get the issuer claim from the JWT token.
+	// Retrieve the issuer from the token claims
 	issuer := token.Claims.(jwt.MapClaims)["Issuer"].(string)
 
-	// Check if the issuer is a refresh token; if so, return an unauthorized error.
+	// Check if the issuer is a refresh token
 	if issuer == "taskquire-refresh" {
 		c.XML(http.StatusUnauthorized, gin.H{
 			"error": "Using JWT refresh token when JWT access token is required",
@@ -232,14 +212,14 @@ func UpdateUserHandler(c *gin.Context) {
 		return
 	}
 
-	// Define a struct to hold XML parameters from the request body.
+	// Parse XML request body into a struct
 	var params struct {
 		Name     string `XML:"name"`
 		Email    string `XML:"email"`
 		Password string `XML:"password"`
 	}
 
-	// Bind XML request body to the 'params' struct.
+	// Check for XML parsing errors
 	if err := c.ShouldBindXML(&params); err != nil {
 		c.XML(http.StatusBadRequest, gin.H{
 			"error": "Invalid XML",
@@ -247,7 +227,7 @@ func UpdateUserHandler(c *gin.Context) {
 		return
 	}
 
-	// Retrieve a list of users from the database.
+	// Retrieve all users from the database
 	users, err := db.GetAllUsers(c)
 	if err != nil {
 		c.XML(http.StatusInternalServerError, gin.H{
@@ -256,10 +236,10 @@ func UpdateUserHandler(c *gin.Context) {
 		return
 	}
 
-	// Get the user ID from the JWT token's subject claim.
+	// Retrieve user ID from the token claims
 	userID := token.Claims.(jwt.MapClaims)["Subject"].(string)
 
-	// If the user ID is empty, return an error.
+	// Check if the user ID is empty
 	if userID == "" {
 		c.XML(http.StatusInternalServerError, gin.H{
 			"error": "Unable to get user ID from JWT token",
@@ -267,7 +247,7 @@ func UpdateUserHandler(c *gin.Context) {
 		return
 	}
 
-	// Initialize user information variables with default values from the database.
+	// Initialize user information with default values
 	userName := params.Name
 	if userName == "" {
 		for _, user := range users {
@@ -298,7 +278,7 @@ func UpdateUserHandler(c *gin.Context) {
 		}
 	}
 
-	// Hash the user's password using bcrypt.
+	// Hash the user's new password
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(userPassword), bcrypt.DefaultCost)
 	if err != nil {
 		c.XML(http.StatusInternalServerError, gin.H{
@@ -307,7 +287,7 @@ func UpdateUserHandler(c *gin.Context) {
 		return
 	}
 
-	// Prepare arguments for updating user information in the database.
+	// Create user update parameters and update the user in the database
 	args := database.UpdateUserParams{
 		ID:        userID,
 		Name:      userName,
@@ -315,8 +295,6 @@ func UpdateUserHandler(c *gin.Context) {
 		Password:  string(hashedPassword),
 		UpdatedAt: time.Now(),
 	}
-
-	// Update the user information in the database.
 	_, err = db.UpdateUser(c, args)
 	if err != nil {
 		c.XML(http.StatusInternalServerError, gin.H{
@@ -325,31 +303,30 @@ func UpdateUserHandler(c *gin.Context) {
 		return
 	}
 
-	// Create a user struct with updated information for response.
+	// Prepare the response with updated user data and send it
 	result := database.User{
 		ID:        args.ID,
 		Name:      args.Name,
 		Email:     args.Email,
 		UpdatedAt: args.UpdatedAt,
 	}
-
-	// Respond with the updated user information.
 	c.XML(http.StatusOK, result)
 }
 
+// DeleteUserHandler deletes a user account.
 func DeleteUserHandler(c *gin.Context) {
-	// Extract the token, database connection, and user information from the context
+	// Extract the JWT token, database connection, and token package
 	token, _, db := ExtractDBAndToken(c)
 
-	// If the token is nil, there's no authenticated user, so return early
+	// Check if there is no token
 	if token == nil {
 		return
 	}
 
-	// Extract the user ID from the JWT token's claims
+	// Retrieve user ID from the token claims
 	userID := token.Claims.(jwt.MapClaims)["Subject"].(string)
 
-	// If the extracted user ID is empty, return an error response
+	// Check if the user ID is empty
 	if userID == "" {
 		c.XML(http.StatusInternalServerError, gin.H{
 			"error": "Unable to get user ID from JWT token",
@@ -357,10 +334,10 @@ func DeleteUserHandler(c *gin.Context) {
 		return
 	}
 
-	// Attempt to delete the user from the database
+	// Delete the user from the database
 	_, err := db.DeleteUser(c, userID)
 
-	// If there was an error during the deletion process, return an error response
+	// Check for deletion errors
 	if err != nil {
 		c.XML(http.StatusInternalServerError, gin.H{
 			"error": "Failed to delete user",
@@ -368,62 +345,58 @@ func DeleteUserHandler(c *gin.Context) {
 		return
 	}
 
-	// Revoke any tokens associated with the deleted user
+	// Revoke the user's tokens
 	RevokeUserTokensHandler(c, userID)
 
-	// Return a success response indicating that the user account has been deleted
+	// Send a success message
 	c.XML(http.StatusOK, "User account has been deleted successfully")
 }
 
-// LoginUserHandler handles user login requests.
+// LoginUserHandler handles user login and issues JWT tokens.
 func LoginUserHandler(c *gin.Context) {
-	// Attempt to retrieve the database connection from the Gin context.
+	// Retrieve the database connection from the Gin context
 	db, errBool := c.Value(string(config.DbContextKey)).(*database.Queries)
 	if !errBool {
-		// If unable to get the database connection, return an error response.
 		c.XML(http.StatusInternalServerError, gin.H{
 			"error": "Unable to get database connection",
 		})
 		return
 	}
 
-	// Define a struct to hold XML request parameters.
+	// Parse XML request body into a struct
 	var params struct {
 		Email    string `XML:"email"`
 		Password string `XML:"password"`
 	}
 
-	// Attempt to bind XML request data into the 'params' struct.
+	// Check for XML parsing errors
 	if err := c.ShouldBindXML(&params); err != nil {
-		// If XML parsing fails, return a Bad Request error response.
 		c.XML(http.StatusBadRequest, gin.H{
 			"error": "Invalid XML",
 		})
 	}
 
-	// Retrieve a list of all users from the database.
+	// Retrieve all users from the database
 	users, err := db.GetAllUsers(c)
 	if err != nil {
-		// If an error occurs while fetching users, return an internal server error.
 		c.XML(http.StatusInternalServerError, gin.H{
 			"error": "Unable to get users",
 		})
 		return
 	}
 
-	// Loop through the list of users to find a matching email.
+	// Iterate through users to find a matching email
 	for _, user := range users {
 		if params.Email == user.Email {
-			// If the email matches, check the password.
+			// Compare the hashed password with the provided password
 			if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(params.Password)); err != nil {
-				// If the password is invalid, return an Unauthorized error.
 				c.XML(http.StatusUnauthorized, gin.H{
 					"error": "Invalid password",
 				})
 				return
 			}
 
-			// Generate unique access and refresh token IDs.
+			// Generate unique IDs for access and refresh tokens
 			accessTokenID, err := uuid.NewUUID()
 			if err != nil {
 				c.XML(http.StatusInternalServerError, gin.H{
@@ -431,7 +404,6 @@ func LoginUserHandler(c *gin.Context) {
 				})
 				return
 			}
-
 			refreshTokenID, err := uuid.NewUUID()
 			if err != nil {
 				c.XML(http.StatusInternalServerError, gin.H{
@@ -440,7 +412,7 @@ func LoginUserHandler(c *gin.Context) {
 				return
 			}
 
-			// Define claims for access and refresh tokens.
+			// Create claims for access and refresh tokens
 			accessClaims := jwt.MapClaims{
 				"ID":        accessTokenID.String(),
 				"Issuer":    "taskquire-access",
@@ -449,7 +421,6 @@ func LoginUserHandler(c *gin.Context) {
 				"ExpiresAt": jwt.NewNumericDate(time.Now().Add(AccessExpiration)),
 				"Revoked":   false,
 			}
-
 			refreshClaims := jwt.MapClaims{
 				"ID":        refreshTokenID.String(),
 				"Issuer":    "taskquire-refresh",
@@ -459,34 +430,31 @@ func LoginUserHandler(c *gin.Context) {
 				"Revoked":   false,
 			}
 
-			// Create JWT tokens with the specified claims.
+			// Create access and refresh tokens
 			token := jwt.NewWithClaims(jwt.SigningMethodHS256, accessClaims)
 			refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshClaims)
 
-			// Add the generated tokens to the token package.
+			// Add tokens to the token package
 			tokenPackage.AddTokenToMap(token)
 			tokenPackage.AddTokenToMap(refreshToken)
 
-			// Sign the access and refresh tokens with the JWT secret.
+			// Sign access and refresh tokens
 			signedToken, err := token.SignedString([]byte(config.ApiCfg.JwtSecret))
 			if err != nil {
-				// If token signing fails, return an internal server error.
 				c.XML(http.StatusInternalServerError, gin.H{
 					"error": "Unable to sign access token",
 				})
 				return
 			}
-
 			signedRefreshToken, err := refreshToken.SignedString([]byte(config.ApiCfg.JwtSecret))
 			if err != nil {
-				// If token signing fails, return an internal server error.
 				c.XML(http.StatusInternalServerError, gin.H{
 					"error": "Unable to sign refresh token",
 				})
 				return
 			}
 
-			// Return a successful response with user information and tokens.
+			// Prepare the response with user data and tokens
 			c.XML(http.StatusOK, gin.H{
 				"id":            accessClaims["Subject"],
 				"name":          user.Name,
@@ -498,7 +466,7 @@ func LoginUserHandler(c *gin.Context) {
 		}
 	}
 
-	// If no matching user is found, return an Unauthorized error.
+	// Send an error message if no user was found
 	c.XML(http.StatusUnauthorized, gin.H{
 		"error": "User not found",
 	})
