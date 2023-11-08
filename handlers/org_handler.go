@@ -29,8 +29,8 @@ func CreateOrgHandler(c *gin.Context) {
 
 	// Bind XML request to the params struct.
 	if err := c.ShouldBindXML(&params); err != nil {
-		c.XML(http.StatusBadRequest, gin.H{
-			"error": "Invalid XML",
+		c.XML(http.StatusBadRequest, config.ErrorResponse{
+			Message: "Invalid XML",
 		})
 		return
 	}
@@ -40,8 +40,8 @@ func CreateOrgHandler(c *gin.Context) {
 
 	// If the user ID is empty, return an error.
 	if userID == "" {
-		c.XML(http.StatusInternalServerError, gin.H{
-			"error": "Unable to get user ID from JWT token",
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to get user ID from JWT token",
 		})
 		return
 	}
@@ -51,8 +51,8 @@ func CreateOrgHandler(c *gin.Context) {
 
 	// If there's an error generating the ID, return an error.
 	if err != nil {
-		c.XML(http.StatusBadRequest, gin.H{
-			"error": "Unable to generate organization ID",
+		c.XML(http.StatusBadRequest, config.ErrorResponse{
+			Message: "Unable to generate organization ID",
 		})
 		return
 	}
@@ -72,8 +72,8 @@ func CreateOrgHandler(c *gin.Context) {
 
 	// If there's an error creating the organization, return an error.
 	if err != nil {
-		c.XML(http.StatusInternalServerError, gin.H{
-			"error": "Unable to create a new organization",
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to create a new organization",
 		})
 		return
 	}
@@ -89,8 +89,8 @@ func GetOrgsHandler(c *gin.Context) {
 
 	// If there's an error retrieving the database connection, return an error.
 	if !errBool {
-		c.XML(http.StatusInternalServerError, gin.H{
-			"error": "Unable to get a database connection",
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to get a database connection",
 		})
 		return
 	}
@@ -100,8 +100,8 @@ func GetOrgsHandler(c *gin.Context) {
 
 	// If there's an error retrieving organizations, return an error.
 	if err != nil {
-		c.XML(http.StatusInternalServerError, gin.H{
-			"error": "Unable to get organizations",
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to get organizations",
 		})
 		return
 	}
@@ -132,8 +132,8 @@ func GetOneOrgHandler(c *gin.Context) {
 
 	// If there's an error retrieving the database connection, return an error.
 	if !errBool {
-		c.XML(http.StatusInternalServerError, gin.H{
-			"error": "Unable to get a database connection",
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to get a database connection",
 		})
 		return
 	}
@@ -143,8 +143,8 @@ func GetOneOrgHandler(c *gin.Context) {
 
 	// If the organization name is missing, return an error.
 	if orgNameParam == "" {
-		c.XML(http.StatusBadRequest, gin.H{
-			"error": "Organization name is missing",
+		c.XML(http.StatusBadRequest, config.ErrorResponse{
+			Message: "Organization name is missing",
 		})
 		return
 	}
@@ -154,8 +154,8 @@ func GetOneOrgHandler(c *gin.Context) {
 
 	// If there's an error retrieving the organization, return an error.
 	if err != nil {
-		c.XML(http.StatusInternalServerError, gin.H{
-			"error": "Unable to get the organization",
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to get the organization",
 		})
 		return
 	}
@@ -199,8 +199,8 @@ func UpdateOrgHandler(c *gin.Context) {
 
 	// Bind XML request to the params struct.
 	if err := c.ShouldBindXML(&params); err != nil {
-		c.XML(http.StatusBadRequest, gin.H{
-			"error": "Invalid XML",
+		c.XML(http.StatusBadRequest, config.ErrorResponse{
+			Message: "Invalid XML",
 		})
 		return
 	}
@@ -229,8 +229,8 @@ func UpdateOrgHandler(c *gin.Context) {
 
 	// If there's an error updating the organization, return an error.
 	if err != nil {
-		c.XML(http.StatusInternalServerError, gin.H{
-			"error": "Unable to update the organization",
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to update the organization",
 		})
 		return
 	}
@@ -262,8 +262,8 @@ func DeleteOrgHandler(c *gin.Context) {
 
 	// If there's an error deleting the organization, return an error.
 	if err != nil {
-		c.XML(http.StatusInternalServerError, gin.H{
-			"error": "Unable to delete the organization",
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to delete the organization",
 		})
 		return
 	}

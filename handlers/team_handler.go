@@ -30,8 +30,8 @@ func CreateTeamHandler(c *gin.Context) {
 
 	// Parse XML request body into the params struct.
 	if err := c.ShouldBindXML(&params); err != nil {
-		c.XML(http.StatusBadRequest, gin.H{
-			"error": "Invalid XML",
+		c.XML(http.StatusBadRequest, config.ErrorResponse{
+			Message: "Invalid XML",
 		})
 		return
 	}
@@ -39,8 +39,8 @@ func CreateTeamHandler(c *gin.Context) {
 	// Get the user ID from the JWT token.
 	userID := token.Claims.(jwt.MapClaims)["Subject"].(string)
 	if userID == "" {
-		c.XML(http.StatusInternalServerError, gin.H{
-			"error": "Unable to get user ID from JWT token",
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to get user ID from JWT token",
 		})
 		return
 	}
@@ -48,8 +48,8 @@ func CreateTeamHandler(c *gin.Context) {
 	// Generate a new team ID.
 	teamID, err := uuid.NewUUID()
 	if err != nil {
-		c.XML(http.StatusBadRequest, gin.H{
-			"error": "Unable to generate team ID",
+		c.XML(http.StatusBadRequest, config.ErrorResponse{
+			Message: "Unable to generate team ID",
 		})
 		return
 	}
@@ -78,8 +78,8 @@ func CreateTeamHandler(c *gin.Context) {
 	// Call the database function to create the team.
 	_, err = db.CreateTeam(c, argsCreate)
 	if err != nil {
-		c.XML(http.StatusInternalServerError, gin.H{
-			"error": "Unable to create new team",
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to create new team",
 		})
 		return
 	}
@@ -93,8 +93,8 @@ func GetTeamsHandler(c *gin.Context) {
 	// Retrieve the database connection.
 	db, errBool := c.Value(string(config.DbContextKey)).(*database.Queries)
 	if !errBool {
-		c.XML(http.StatusInternalServerError, gin.H{
-			"error": "Unable to get database connection",
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to get database connection",
 		})
 		return
 	}
@@ -102,8 +102,8 @@ func GetTeamsHandler(c *gin.Context) {
 	// Retrieve all teams from the database.
 	teams, err := db.GetAllTeams(c)
 	if err != nil {
-		c.XML(http.StatusInternalServerError, gin.H{
-			"error": "Unable to get teams",
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to get teams",
 		})
 		return
 	}
@@ -133,8 +133,8 @@ func GetOneTeamHandler(c *gin.Context) {
 	// Retrieve the database connection.
 	db, errBool := c.Value(string(config.DbContextKey)).(*database.Queries)
 	if !errBool {
-		c.XML(http.StatusInternalServerError, gin.H{
-			"error": "Unable to get database connection",
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to get database connection",
 		})
 		return
 	}
@@ -143,8 +143,8 @@ func GetOneTeamHandler(c *gin.Context) {
 	teamNameParam := c.Param("teamName")
 
 	if teamNameParam == "" {
-		c.XML(http.StatusBadRequest, gin.H{
-			"error": "Team name is missing",
+		c.XML(http.StatusBadRequest, config.ErrorResponse{
+			Message: "Team name is missing",
 		})
 		return
 	}
@@ -152,8 +152,8 @@ func GetOneTeamHandler(c *gin.Context) {
 	// Retrieve team information from the database.
 	team, err := db.GetTeamByName(c, teamNameParam)
 	if err != nil {
-		c.XML(http.StatusInternalServerError, gin.H{
-			"error": "Unable to get team",
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to get team",
 		})
 		return
 	}
@@ -161,8 +161,8 @@ func GetOneTeamHandler(c *gin.Context) {
 	// Retrieve users associated with the team.
 	users, err := db.GetAllUsersFromTeam(c, team.ID)
 	if err != nil {
-		c.XML(http.StatusInternalServerError, gin.H{
-			"error": "Unable to get team users",
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to get team users",
 		})
 		return
 	}
@@ -172,8 +172,8 @@ func GetOneTeamHandler(c *gin.Context) {
 	for _, user := range users {
 		u, err := db.GetUserByID(c, user.UserID)
 		if err != nil {
-			c.XML(http.StatusInternalServerError, gin.H{
-				"error": "Unable to get team user name",
+			c.XML(http.StatusInternalServerError, config.ErrorResponse{
+				Message: "Unable to get team user name",
 			})
 			return
 		}
@@ -226,8 +226,8 @@ func UpdateTeamHandler(c *gin.Context) {
 
 	// Parse XML request body into the params struct.
 	if err := c.ShouldBindXML(&params); err != nil {
-		c.XML(http.StatusBadRequest, gin.H{
-			"error": "Invalid XML",
+		c.XML(http.StatusBadRequest, config.ErrorResponse{
+			Message: "Invalid XML",
 		})
 		return
 	}

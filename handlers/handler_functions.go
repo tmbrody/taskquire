@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"reflect"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -11,6 +12,20 @@ import (
 	"github.com/tmbrody/taskquire/tokenPackage"
 )
 
+// CheckEmptyFields checks if any fields in a struct are empty.
+func CheckEmptyFields(i interface{}) bool {
+	v := reflect.ValueOf(i)
+
+	// Loop through the struct's fields
+	for i := 0; i < v.NumField(); i++ {
+		if v.Field(i).Kind() == reflect.String && v.Field(i).String() == "" {
+			return true
+		}
+	}
+
+	return false
+}
+
 // ExtractDBAndToken extracts JWT token and database connection from the request context.
 func ExtractDBAndToken(c *gin.Context) (*jwt.Token, string, *database.Queries) {
 	// Extract JWT token from the request header
@@ -18,8 +33,8 @@ func ExtractDBAndToken(c *gin.Context) (*jwt.Token, string, *database.Queries) {
 
 	// Check if the token is missing or invalid
 	if tokenString == "" {
-		c.XML(http.StatusUnauthorized, gin.H{
-			"error": "JWT token is missing or invalid",
+		c.XML(http.StatusUnauthorized, config.ErrorResponse{
+			Message: "JWT token is missing or invalid",
 		})
 		return nil, "", nil
 	}
@@ -27,8 +42,8 @@ func ExtractDBAndToken(c *gin.Context) (*jwt.Token, string, *database.Queries) {
 	// Parse and validate the JWT token
 	token, err := tokenPackage.ParseAndValidateJWTToken(tokenString)
 	if err != nil {
-		c.XML(http.StatusUnauthorized, gin.H{
-			"error": "Invalid JWT token",
+		c.XML(http.StatusUnauthorized, config.ErrorResponse{
+			Message: "Invalid JWT token",
 		})
 		return nil, "", nil
 	}
@@ -43,8 +58,8 @@ func ExtractDBAndToken(c *gin.Context) (*jwt.Token, string, *database.Queries) {
 
 	// Check if the token is revoked
 	if token.Claims.(jwt.MapClaims)["Revoked"] == true {
-		c.XML(http.StatusUnauthorized, gin.H{
-			"error": "Trying to use revoked JWT token",
+		c.XML(http.StatusUnauthorized, config.ErrorResponse{
+			Message: "Trying to use revoked JWT token",
 		})
 		return nil, "", nil
 	}
@@ -52,8 +67,8 @@ func ExtractDBAndToken(c *gin.Context) (*jwt.Token, string, *database.Queries) {
 	// Get the database connection from the context
 	db, errBool := c.Value(string(config.DbContextKey)).(*database.Queries)
 	if !errBool {
-		c.XML(http.StatusInternalServerError, gin.H{
-			"error": "Unable to get database connection",
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to get database connection",
 		})
 		return nil, "", nil
 	}
@@ -65,8 +80,8 @@ func ExtractDBAndToken(c *gin.Context) (*jwt.Token, string, *database.Queries) {
 func VerifyTeamOwnershipFromParam(c *gin.Context, token *jwt.Token, db *database.Queries, teamNameParam string) database.Team {
 	// Check if the team name is missing
 	if teamNameParam == "" {
-		c.XML(http.StatusBadRequest, gin.H{
-			"error": "Team name is missing",
+		c.XML(http.StatusBadRequest, config.ErrorResponse{
+			Message: "Team name is missing",
 		})
 		return database.Team{}
 	}
@@ -76,8 +91,8 @@ func VerifyTeamOwnershipFromParam(c *gin.Context, token *jwt.Token, db *database
 
 	// Check if the user ID is missing
 	if userID == "" {
-		c.XML(http.StatusInternalServerError, gin.H{
-			"error": "Unable to get user ID from JWT token",
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to get user ID from JWT token",
 		})
 		return database.Team{}
 	}
@@ -87,16 +102,16 @@ func VerifyTeamOwnershipFromParam(c *gin.Context, token *jwt.Token, db *database
 
 	// Check for errors when retrieving the team
 	if err != nil {
-		c.XML(http.StatusInternalServerError, gin.H{
-			"error": "Unable to get team",
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to get team",
 		})
 		return database.Team{}
 	}
 
 	// Check if the user is the owner of the team
 	if team.OwnerID != userID {
-		c.XML(http.StatusUnauthorized, gin.H{
-			"error": "You cannot modify this part of the team because you are not its owner",
+		c.XML(http.StatusUnauthorized, config.ErrorResponse{
+			Message: "You cannot modify this part of the team because you are not its owner",
 		})
 		return database.Team{}
 	}
@@ -111,8 +126,8 @@ func VerifyOrgOwnership(c *gin.Context, token *jwt.Token, db *database.Queries) 
 
 	// Check if the organization name is missing
 	if orgNameParam == "" {
-		c.XML(http.StatusBadRequest, gin.H{
-			"error": "Organization name is missing",
+		c.XML(http.StatusBadRequest, config.ErrorResponse{
+			Message: "Organization name is missing",
 		})
 		return database.Org{}
 	}
@@ -122,8 +137,8 @@ func VerifyOrgOwnership(c *gin.Context, token *jwt.Token, db *database.Queries) 
 
 	// Check if the user ID is missing
 	if userID == "" {
-		c.XML(http.StatusInternalServerError, gin.H{
-			"error": "Unable to get user ID from JWT token",
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to get user ID from JWT token",
 		})
 		return database.Org{}
 	}
@@ -133,16 +148,16 @@ func VerifyOrgOwnership(c *gin.Context, token *jwt.Token, db *database.Queries) 
 
 	// Check for errors when retrieving the organization
 	if err != nil {
-		c.XML(http.StatusInternalServerError, gin.H{
-			"error": "Unable to get organization",
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to get organization",
 		})
 		return database.Org{}
 	}
 
 	// Check if the user is the owner of the organization
 	if org.OwnerID != userID {
-		c.XML(http.StatusUnauthorized, gin.H{
-			"error": "You cannot modify this part of the organization because you are not its owner",
+		c.XML(http.StatusUnauthorized, config.ErrorResponse{
+			Message: "You cannot modify this part of the organization because you are not its owner",
 		})
 		return database.Org{}
 	}
@@ -171,8 +186,8 @@ func VerifyOrgAndGetProjectByParamName(c *gin.Context) (database.Project, *datab
 	// Get projects by organization ID
 	projects, err := db.GetProjectsByOrgID(c, org.ID)
 	if err != nil {
-		c.XML(http.StatusInternalServerError, gin.H{
-			"error": "Unable to get projects",
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to get projects",
 		})
 		return database.Project{}, nil
 	}
@@ -182,8 +197,8 @@ func VerifyOrgAndGetProjectByParamName(c *gin.Context) (database.Project, *datab
 
 	// Check if the project name is missing
 	if projectNameParam == "" {
-		c.XML(http.StatusBadRequest, gin.H{
-			"error": "Project name is missing",
+		c.XML(http.StatusBadRequest, config.ErrorResponse{
+			Message: "Project name is missing",
 		})
 		return database.Project{}, nil
 	}
@@ -208,8 +223,8 @@ func GetProjectByParamName(c *gin.Context, db *database.Queries) database.Projec
 
 	// Check if the organization name is missing
 	if orgNameParam == "" {
-		c.XML(http.StatusBadRequest, gin.H{
-			"error": "Organization name is missing",
+		c.XML(http.StatusBadRequest, config.ErrorResponse{
+			Message: "Organization name is missing",
 		})
 		return database.Project{}
 	}
@@ -219,8 +234,8 @@ func GetProjectByParamName(c *gin.Context, db *database.Queries) database.Projec
 
 	// Check for errors when retrieving the organization
 	if err != nil {
-		c.XML(http.StatusInternalServerError, gin.H{
-			"error": "Unable to get organization",
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to get organization",
 		})
 		return database.Project{}
 	}
@@ -228,8 +243,8 @@ func GetProjectByParamName(c *gin.Context, db *database.Queries) database.Projec
 	// Get projects by organization ID
 	projects, err := db.GetProjectsByOrgID(c, org.ID)
 	if err != nil {
-		c.XML(http.StatusInternalServerError, gin.H{
-			"error": "Unable to get projects",
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to get projects",
 		})
 		return database.Project{}
 	}
@@ -239,8 +254,8 @@ func GetProjectByParamName(c *gin.Context, db *database.Queries) database.Projec
 
 	// Check if the project name is missing
 	if projectNameParam == "" {
-		c.XML(http.StatusBadRequest, gin.H{
-			"error": "Project name is missing",
+		c.XML(http.StatusBadRequest, config.ErrorResponse{
+			Message: "Project name is missing",
 		})
 		return database.Project{}
 	}
@@ -270,8 +285,8 @@ func GetTaskByParamName(c *gin.Context) (database.Task, *database.Queries) {
 
 	// Check if the task name is missing
 	if taskNameParam == "" {
-		c.XML(http.StatusBadRequest, gin.H{
-			"error": "Task name is missing",
+		c.XML(http.StatusBadRequest, config.ErrorResponse{
+			Message: "Task name is missing",
 		})
 		return database.Task{}, nil
 	}
@@ -281,8 +296,8 @@ func GetTaskByParamName(c *gin.Context) (database.Task, *database.Queries) {
 
 	// Check for errors when retrieving the task
 	if err != nil {
-		c.XML(http.StatusInternalServerError, gin.H{
-			"error": "Unable to get task",
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to get task",
 		})
 		return database.Task{}, nil
 	}
@@ -333,8 +348,8 @@ func GetUserAndTeamByParam(c *gin.Context) (database.User, database.Team, *datab
 	// Bind XML parameters from the request to the params struct
 	if err := c.ShouldBindXML(&params); err != nil {
 		// Return a bad request response with an error message
-		c.XML(http.StatusBadRequest, gin.H{
-			"error": "Invalid XML",
+		c.XML(http.StatusBadRequest, config.ErrorResponse{
+			Message: "Invalid XML",
 		})
 		return database.User{}, database.Team{}, nil
 	}
@@ -351,8 +366,8 @@ func GetUserAndTeamByParam(c *gin.Context) (database.User, database.Team, *datab
 	user, err := db.GetUserByName(c, params.User)
 	if err != nil {
 		// Return a bad request response with an error message
-		c.XML(http.StatusBadRequest, gin.H{
-			"error": "Invalid XML",
+		c.XML(http.StatusBadRequest, config.ErrorResponse{
+			Message: "Invalid XML",
 		})
 		return database.User{}, database.Team{}, nil
 	}
@@ -380,8 +395,8 @@ func GetTeamAndProjectByParam(c *gin.Context) (database.Project, database.Team, 
 	// Bind XML parameters from the request to the params struct
 	if err := c.ShouldBindXML(&params); err != nil {
 		// Return a bad request response with an error message
-		c.XML(http.StatusBadRequest, gin.H{
-			"error": "Invalid XML",
+		c.XML(http.StatusBadRequest, config.ErrorResponse{
+			Message: "Invalid XML",
 		})
 		return database.Project{}, database.Team{}, nil
 	}
@@ -391,8 +406,8 @@ func GetTeamAndProjectByParam(c *gin.Context) (database.Project, database.Team, 
 
 	// If there is an error or team ID is empty, return empty Project, Team, and nil Queries
 	if err != nil {
-		c.XML(http.StatusInternalServerError, gin.H{
-			"error": "Unable to get team",
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to get team",
 		})
 		return database.Project{}, database.Team{}, nil
 	}
@@ -401,8 +416,8 @@ func GetTeamAndProjectByParam(c *gin.Context) (database.Project, database.Team, 
 	project, err := db.GetProjectByName(c, params.Project)
 	if err != nil {
 		// Return a bad request response with an error message
-		c.XML(http.StatusBadRequest, gin.H{
-			"error": "Invalid XML",
+		c.XML(http.StatusBadRequest, config.ErrorResponse{
+			Message: "Invalid XML",
 		})
 		return database.Project{}, database.Team{}, nil
 	}
@@ -426,8 +441,8 @@ func GetTeamAndDatabaseAndUserID(c *gin.Context) (database.Team, *database.Queri
 
 	// If user ID is empty, return an error response
 	if userID == "" {
-		c.XML(http.StatusInternalServerError, gin.H{
-			"error": "Unable to get user ID from JWT token",
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to get user ID from JWT token",
 		})
 		return database.Team{}, nil, ""
 	}
@@ -445,8 +460,8 @@ func GetTeamAndDatabaseAndUserID(c *gin.Context) (database.Team, *database.Queri
 
 	// If team name parameter is empty, return an error response
 	if teamNameParam == "" {
-		c.XML(http.StatusBadRequest, gin.H{
-			"error": "Organization name is missing",
+		c.XML(http.StatusBadRequest, config.ErrorResponse{
+			Message: "Organization name is missing",
 		})
 		return database.Team{}, nil, ""
 	}
@@ -456,8 +471,8 @@ func GetTeamAndDatabaseAndUserID(c *gin.Context) (database.Team, *database.Queri
 
 	// If there is an error, return an error response
 	if err != nil {
-		c.XML(http.StatusInternalServerError, gin.H{
-			"error": "Unable to get organization",
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to get organization",
 		})
 		return database.Team{}, nil, ""
 	}
@@ -465,8 +480,8 @@ func GetTeamAndDatabaseAndUserID(c *gin.Context) (database.Team, *database.Queri
 	// Retrieve all users from the team
 	users, err := db.GetAllUsersFromTeam(c, team.ID)
 	if err != nil {
-		c.XML(http.StatusInternalServerError, gin.H{
-			"error": "Unable to get team users",
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to get team users",
 		})
 		return database.Team{}, nil, ""
 	}
@@ -486,8 +501,8 @@ func GetTeamAndDatabaseAndUserID(c *gin.Context) (database.Team, *database.Queri
 
 	// If the user is not in the team, return an unauthorized response
 	if !userInTeam {
-		c.XML(http.StatusUnauthorized, gin.H{
-			"error": "User is not in team",
+		c.XML(http.StatusUnauthorized, config.ErrorResponse{
+			Message: "User is not in team",
 		})
 		return database.Team{}, nil, ""
 	}
@@ -532,8 +547,8 @@ func SetProjectUpdatedTime(c *gin.Context, db *database.Queries, project databas
 	_, err := db.UpdateProject(c, args_project)
 	if err != nil {
 		// Return an internal server error response with an error message
-		c.XML(http.StatusInternalServerError, gin.H{
-			"error": "Unable to update project",
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to update project",
 		})
 		return
 	}
@@ -545,8 +560,8 @@ func SetProjectUpdatedTimeUsingTask(c *gin.Context, db *database.Queries, task d
 	project, err := db.GetProjectByID(c, task.ProjectID)
 	if err != nil {
 		// Return an internal server error response with an error message
-		c.XML(http.StatusInternalServerError, gin.H{
-			"error": "Unable to get project",
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to get project",
 		})
 		return database.Project{}
 	}
@@ -572,8 +587,8 @@ func SetOrgUpdatedTime(c *gin.Context, db *database.Queries, org database.Org) {
 	_, err := db.UpdateOrg(c, args_org)
 	if err != nil {
 		// Return an internal server error response with an error message
-		c.XML(http.StatusInternalServerError, gin.H{
-			"error": "Unable to update org",
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to update org",
 		})
 		return
 	}
@@ -585,8 +600,8 @@ func SetOrgUpdatedTimeUsingProject(c *gin.Context, db *database.Queries, project
 	org, err := db.GetOrgByID(c, project.OrgID)
 	if err != nil {
 		// Return an internal server error response with an error message
-		c.XML(http.StatusInternalServerError, gin.H{
-			"error": "Unable to get org",
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to get org",
 		})
 		return
 	}
@@ -601,8 +616,8 @@ func SetTeamUpdatedTime(c *gin.Context, db *database.Queries, teamID string) {
 	team, err := db.GetTeamByID(c, teamID)
 	if err != nil {
 		// Return an internal server error response with an error message
-		c.XML(http.StatusInternalServerError, gin.H{
-			"error": "Unable to get team",
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to get team",
 		})
 		return
 	}
@@ -619,8 +634,8 @@ func SetTeamUpdatedTime(c *gin.Context, db *database.Queries, teamID string) {
 	_, err = db.UpdateTeam(c, args_team)
 	if err != nil {
 		// Return an internal server error response with an error message
-		c.XML(http.StatusInternalServerError, gin.H{
-			"error": "Unable to update team",
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to update team",
 		})
 		return
 	}

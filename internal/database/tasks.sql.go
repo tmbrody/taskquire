@@ -89,6 +89,28 @@ func (q *Queries) GetSubtasksByParentID(ctx context.Context, parentID string) ([
 	return items, nil
 }
 
+const getTaskByID = `-- name: GetTaskByID :one
+SELECT id, name, description, created_at, updated_at, project_id, team_id, owner_id, parent_id FROM tasks
+WHERE id = ?
+`
+
+func (q *Queries) GetTaskByID(ctx context.Context, id string) (Task, error) {
+	row := q.db.QueryRowContext(ctx, getTaskByID, id)
+	var i Task
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Description,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.ProjectID,
+		&i.TeamID,
+		&i.OwnerID,
+		&i.ParentID,
+	)
+	return i, err
+}
+
 const getTaskByName = `-- name: GetTaskByName :one
 SELECT id, name, description, created_at, updated_at, project_id, team_id, owner_id, parent_id FROM tasks
 WHERE name = ?

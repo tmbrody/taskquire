@@ -30,8 +30,8 @@ func CreateTaskHandler(c *gin.Context) {
 
 	// Bind XML request body to the params struct.
 	if err := c.ShouldBindXML(&params); err != nil {
-		c.XML(http.StatusBadRequest, gin.H{
-			"error": "Invalid XML",
+		c.XML(http.StatusBadRequest, config.ErrorResponse{
+			Message: "Invalid XML",
 		})
 		return
 	}
@@ -39,8 +39,8 @@ func CreateTaskHandler(c *gin.Context) {
 	// Retrieve tasks for the project from the database.
 	tasks, err := db.GetTasksByProjectID(c, project.ID)
 	if err != nil {
-		c.XML(http.StatusInternalServerError, gin.H{
-			"error": "Unable to get tasks",
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to get tasks",
 		})
 		return
 	}
@@ -48,8 +48,8 @@ func CreateTaskHandler(c *gin.Context) {
 	// Check if a task with the same name already exists in the project.
 	for _, task := range tasks {
 		if task.Name == params.Name {
-			c.XML(http.StatusBadRequest, gin.H{
-				"error": "Task name already exists",
+			c.XML(http.StatusBadRequest, config.ErrorResponse{
+				Message: "Task name already exists",
 			})
 			return
 		}
@@ -58,8 +58,8 @@ func CreateTaskHandler(c *gin.Context) {
 	// Generate a new UUID for the task.
 	taskID, err := uuid.NewUUID()
 	if err != nil {
-		c.XML(http.StatusBadRequest, gin.H{
-			"error": "Unable to generate task ID",
+		c.XML(http.StatusBadRequest, config.ErrorResponse{
+			Message: "Unable to generate task ID",
 		})
 		return
 	}
@@ -84,8 +84,8 @@ func CreateTaskHandler(c *gin.Context) {
 	if taskNameParam != "" {
 		parentTask, err = db.GetTaskByName(c, taskNameParam)
 		if err != nil {
-			c.XML(http.StatusBadRequest, gin.H{
-				"error": "Parent task does not exist",
+			c.XML(http.StatusBadRequest, config.ErrorResponse{
+				Message: "Parent task does not exist",
 			})
 			return
 		}
@@ -107,8 +107,8 @@ func CreateTaskHandler(c *gin.Context) {
 	// Create the new task in the database.
 	_, err = db.CreateTask(c, args)
 	if err != nil {
-		c.XML(http.StatusInternalServerError, gin.H{
-			"error": "Unable to create new task",
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to create new task",
 		})
 		return
 	}
@@ -136,8 +136,8 @@ func GetTasksHandler(c *gin.Context) {
 	// Retrieve tasks for the project from the database.
 	tasks, err := db.GetTasksByProjectID(c, project.ID)
 	if err != nil {
-		c.XML(http.StatusInternalServerError, gin.H{
-			"error": "Unable to get tasks",
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to get tasks",
 		})
 		return
 	}
@@ -170,8 +170,8 @@ func GetOneTaskHandler(c *gin.Context) {
 	// Get the database connection from the context.
 	db, errBool := c.Value(string(config.DbContextKey)).(*database.Queries)
 	if !errBool {
-		c.XML(http.StatusInternalServerError, gin.H{
-			"error": "Unable to get database connection",
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to get database connection",
 		})
 		return
 	}
@@ -181,8 +181,8 @@ func GetOneTaskHandler(c *gin.Context) {
 
 	// If taskNameParam is empty, return an error.
 	if taskNameParam == "" {
-		c.XML(http.StatusBadRequest, gin.H{
-			"error": "Task name is missing",
+		c.XML(http.StatusBadRequest, config.ErrorResponse{
+			Message: "Task name is missing",
 		})
 		return
 	}
@@ -190,8 +190,8 @@ func GetOneTaskHandler(c *gin.Context) {
 	// Fetch the task by name from the database.
 	task, err := db.GetTaskByName(c, taskNameParam)
 	if err != nil {
-		c.XML(http.StatusInternalServerError, gin.H{
-			"error": "Unable to get task",
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to get task",
 		})
 		return
 	}
@@ -199,8 +199,8 @@ func GetOneTaskHandler(c *gin.Context) {
 	// Fetch subtasks for the task from the database.
 	subtasks, err := db.GetSubtasksByParentID(c, task.ID)
 	if err != nil {
-		c.XML(http.StatusInternalServerError, gin.H{
-			"error": "Unable to get subtasks",
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to get subtasks",
 		})
 		return
 	}
@@ -251,8 +251,8 @@ func UpdateTaskHandler(c *gin.Context) {
 
 	// Bind XML request body to the params struct.
 	if err := c.ShouldBindXML(&params); err != nil {
-		c.XML(http.StatusBadRequest, gin.H{
-			"error": "Invalid XML",
+		c.XML(http.StatusBadRequest, config.ErrorResponse{
+			Message: "Invalid XML",
 		})
 		return
 	}
@@ -276,7 +276,7 @@ func UpdateTaskHandler(c *gin.Context) {
 	}
 
 	// Define arguments for updating the task.
-	args_task := database.UpdateTaskParams{
+	args := database.UpdateTaskParams{
 		ID:          task.ID,
 		Name:        taskName,
 		Description: taskDescription,
@@ -284,10 +284,10 @@ func UpdateTaskHandler(c *gin.Context) {
 	}
 
 	// Update the task in the database.
-	_, err := db.UpdateTask(c, args_task)
+	_, err := db.UpdateTask(c, args)
 	if err != nil {
-		c.XML(http.StatusInternalServerError, gin.H{
-			"error": "Unable to update task",
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to update task",
 		})
 		return
 	}
@@ -307,7 +307,7 @@ func UpdateTaskHandler(c *gin.Context) {
 	SetTeamUpdatedTime(c, db, task.TeamID)
 
 	// Respond with the updated task details.
-	c.XML(http.StatusOK, args_task)
+	c.XML(http.StatusOK, args)
 }
 
 // DeleteTaskHandler is a HTTP request handler for deleting a task.
@@ -321,11 +321,62 @@ func DeleteTaskHandler(c *gin.Context) {
 		return
 	}
 
-	// Delete the task from the database.
-	_, err := db.DeleteTask(c, task.ID)
+	// Fetch subtasks for the task from the database.
+	subtasks, err := db.GetSubtasksByParentID(c, task.ID)
 	if err != nil {
-		c.XML(http.StatusInternalServerError, gin.H{
-			"error": "Unable to delete task",
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to get subtasks",
+		})
+		return
+	}
+
+	// Delete the parent task's subtasks from the database.
+	if len(subtasks) > 0 {
+		for _, subtask := range subtasks {
+			_, err := db.DeleteTask(c, subtask.ID)
+			if err != nil {
+				c.XML(http.StatusInternalServerError, config.ErrorResponse{
+					Message: "Unable to delete subtask",
+				})
+				return
+			}
+		}
+	}
+
+	// If the task has a parent task, update the parent task.
+	if task.ParentID != "" {
+		// Fetch the parent task from the database.
+		parentTask, err := db.GetTaskByID(c, task.ParentID)
+		if err != nil {
+			c.XML(http.StatusInternalServerError, config.ErrorResponse{
+				Message: "Unable to get parent task",
+			})
+			return
+		}
+
+		// Define arguments for updating the task.
+		args := database.UpdateTaskParams{
+			ID:          parentTask.ID,
+			Name:        parentTask.Name,
+			Description: parentTask.Description,
+			UpdatedAt:   time.Now(),
+		}
+
+		// Update the parent task in the database.
+		_, err = db.UpdateTask(c, args)
+		if err != nil {
+			c.XML(http.StatusInternalServerError, config.ErrorResponse{
+				Message: "Unable to update parent task",
+			})
+			return
+		}
+	}
+
+	// Delete the task from the database.
+	_, err = db.DeleteTask(c, task.ID)
+	if err != nil {
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to delete task",
 		})
 		return
 	}

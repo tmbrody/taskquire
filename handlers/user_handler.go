@@ -22,8 +22,8 @@ func CreateUserHandler(c *gin.Context) {
 	// Retrieve the database connection from the Gin context
 	db, errBool := c.Value(string(config.DbContextKey)).(*database.Queries)
 	if !errBool {
-		c.XML(http.StatusInternalServerError, gin.H{
-			"error": "Unable to get database connection",
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to get database connection",
 		})
 		return
 	}
@@ -37,8 +37,16 @@ func CreateUserHandler(c *gin.Context) {
 
 	// Check for XML parsing errors
 	if err := c.ShouldBindXML(&params); err != nil {
-		c.XML(http.StatusBadRequest, gin.H{
-			"error": "Invalid XML",
+		c.XML(http.StatusBadRequest, config.ErrorResponse{
+			Message: "Invalid XML.",
+		})
+		return
+	}
+
+	// Check if any of the fields are empty strings
+	if CheckEmptyFields(params) {
+		c.XML(http.StatusBadRequest, config.ErrorResponse{
+			Message: "Invalid request payload: Missing or invalid fields.",
 		})
 		return
 	}
@@ -46,8 +54,8 @@ func CreateUserHandler(c *gin.Context) {
 	// Generate a unique user ID
 	userID, err := uuid.NewUUID()
 	if err != nil {
-		c.XML(http.StatusBadRequest, gin.H{
-			"error": "Unable to generate user ID",
+		c.XML(http.StatusBadRequest, config.ErrorResponse{
+			Message: "Unable to generate user ID",
 		})
 		return
 	}
@@ -55,8 +63,8 @@ func CreateUserHandler(c *gin.Context) {
 	// Hash the user's password
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(params.Password), bcrypt.DefaultCost)
 	if err != nil {
-		c.XML(http.StatusInternalServerError, gin.H{
-			"error": "Unable to hash password",
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to hash password",
 		})
 		return
 	}
@@ -72,8 +80,8 @@ func CreateUserHandler(c *gin.Context) {
 	}
 	_, err = db.CreateUser(c, args)
 	if err != nil {
-		c.XML(http.StatusInternalServerError, gin.H{
-			"error": "Unable to create new user",
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to create new user",
 		})
 		return
 	}
@@ -94,8 +102,8 @@ func GetUsersHandler(c *gin.Context) {
 	// Retrieve the database connection from the Gin context
 	db, errBool := c.Value(string(config.DbContextKey)).(*database.Queries)
 	if !errBool {
-		c.XML(http.StatusInternalServerError, gin.H{
-			"error": "Unable to get database connection",
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to get database connection",
 		})
 		return
 	}
@@ -103,8 +111,8 @@ func GetUsersHandler(c *gin.Context) {
 	// Retrieve all users from the database
 	users, err := db.GetAllUsers(c)
 	if err != nil {
-		c.XML(http.StatusInternalServerError, gin.H{
-			"error": "Unable to get users",
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to get users",
 		})
 		return
 	}
@@ -130,8 +138,8 @@ func GetOneUserHandler(c *gin.Context) {
 	// Retrieve the database connection from the Gin context
 	db, errBool := c.Value(string(config.DbContextKey)).(*database.Queries)
 	if !errBool {
-		c.XML(http.StatusInternalServerError, gin.H{
-			"error": "Unable to get database connection",
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to get database connection",
 		})
 		return
 	}
@@ -141,8 +149,8 @@ func GetOneUserHandler(c *gin.Context) {
 
 	// Check if the username is missing
 	if userNameParam == "" {
-		c.XML(http.StatusBadRequest, gin.H{
-			"error": "User name is missing",
+		c.XML(http.StatusBadRequest, config.ErrorResponse{
+			Message: "User name is missing",
 		})
 		return
 	}
@@ -150,8 +158,8 @@ func GetOneUserHandler(c *gin.Context) {
 	// Retrieve user data by username from the database
 	user, err := db.GetUserByName(c, userNameParam)
 	if err != nil {
-		c.XML(http.StatusInternalServerError, gin.H{
-			"error": "Unable to get user",
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to get user",
 		})
 		return
 	}
@@ -159,8 +167,8 @@ func GetOneUserHandler(c *gin.Context) {
 	// Retrieve teams associated with the user
 	teams, err := db.GetAllTeamsByUser(c, user.ID)
 	if err != nil {
-		c.XML(http.StatusInternalServerError, gin.H{
-			"error": "Unable to get team users",
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to get team users",
 		})
 		return
 	}
@@ -170,8 +178,8 @@ func GetOneUserHandler(c *gin.Context) {
 	for _, team := range teams {
 		t, err := db.GetTeamByID(c, team.TeamID)
 		if err != nil {
-			c.XML(http.StatusInternalServerError, gin.H{
-				"error": "Unable to get team user name",
+			c.XML(http.StatusInternalServerError, config.ErrorResponse{
+				Message: "Unable to get team user name",
 			})
 			return
 		}
@@ -206,8 +214,8 @@ func UpdateUserHandler(c *gin.Context) {
 
 	// Check if the issuer is a refresh token
 	if issuer == "taskquire-refresh" {
-		c.XML(http.StatusUnauthorized, gin.H{
-			"error": "Using JWT refresh token when JWT access token is required",
+		c.XML(http.StatusUnauthorized, config.ErrorResponse{
+			Message: "Using JWT refresh token when JWT access token is required",
 		})
 		return
 	}
@@ -221,8 +229,8 @@ func UpdateUserHandler(c *gin.Context) {
 
 	// Check for XML parsing errors
 	if err := c.ShouldBindXML(&params); err != nil {
-		c.XML(http.StatusBadRequest, gin.H{
-			"error": "Invalid XML",
+		c.XML(http.StatusBadRequest, config.ErrorResponse{
+			Message: "Invalid XML",
 		})
 		return
 	}
@@ -230,8 +238,8 @@ func UpdateUserHandler(c *gin.Context) {
 	// Retrieve all users from the database
 	users, err := db.GetAllUsers(c)
 	if err != nil {
-		c.XML(http.StatusInternalServerError, gin.H{
-			"error": "Unable to get users",
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to get users",
 		})
 		return
 	}
@@ -241,8 +249,8 @@ func UpdateUserHandler(c *gin.Context) {
 
 	// Check if the user ID is empty
 	if userID == "" {
-		c.XML(http.StatusInternalServerError, gin.H{
-			"error": "Unable to get user ID from JWT token",
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to get user ID from JWT token",
 		})
 		return
 	}
@@ -281,8 +289,8 @@ func UpdateUserHandler(c *gin.Context) {
 	// Hash the user's new password
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(userPassword), bcrypt.DefaultCost)
 	if err != nil {
-		c.XML(http.StatusInternalServerError, gin.H{
-			"error": "Unable to hash password",
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to hash password",
 		})
 		return
 	}
@@ -297,8 +305,8 @@ func UpdateUserHandler(c *gin.Context) {
 	}
 	_, err = db.UpdateUser(c, args)
 	if err != nil {
-		c.XML(http.StatusInternalServerError, gin.H{
-			"error": "Failed to update user data",
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Failed to update user data",
 		})
 		return
 	}
@@ -328,8 +336,8 @@ func DeleteUserHandler(c *gin.Context) {
 
 	// Check if the user ID is empty
 	if userID == "" {
-		c.XML(http.StatusInternalServerError, gin.H{
-			"error": "Unable to get user ID from JWT token",
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to get user ID from JWT token",
 		})
 		return
 	}
@@ -339,8 +347,8 @@ func DeleteUserHandler(c *gin.Context) {
 
 	// Check for deletion errors
 	if err != nil {
-		c.XML(http.StatusInternalServerError, gin.H{
-			"error": "Failed to delete user",
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Failed to delete user",
 		})
 		return
 	}
@@ -357,8 +365,8 @@ func LoginUserHandler(c *gin.Context) {
 	// Retrieve the database connection from the Gin context
 	db, errBool := c.Value(string(config.DbContextKey)).(*database.Queries)
 	if !errBool {
-		c.XML(http.StatusInternalServerError, gin.H{
-			"error": "Unable to get database connection",
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to get database connection",
 		})
 		return
 	}
@@ -371,16 +379,16 @@ func LoginUserHandler(c *gin.Context) {
 
 	// Check for XML parsing errors
 	if err := c.ShouldBindXML(&params); err != nil {
-		c.XML(http.StatusBadRequest, gin.H{
-			"error": "Invalid XML",
+		c.XML(http.StatusBadRequest, config.ErrorResponse{
+			Message: "Invalid XML",
 		})
 	}
 
 	// Retrieve all users from the database
 	users, err := db.GetAllUsers(c)
 	if err != nil {
-		c.XML(http.StatusInternalServerError, gin.H{
-			"error": "Unable to get users",
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to get users",
 		})
 		return
 	}
@@ -390,8 +398,8 @@ func LoginUserHandler(c *gin.Context) {
 		if params.Email == user.Email {
 			// Compare the hashed password with the provided password
 			if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(params.Password)); err != nil {
-				c.XML(http.StatusUnauthorized, gin.H{
-					"error": "Invalid password",
+				c.XML(http.StatusUnauthorized, config.ErrorResponse{
+					Message: "Invalid password",
 				})
 				return
 			}
@@ -399,15 +407,15 @@ func LoginUserHandler(c *gin.Context) {
 			// Generate unique IDs for access and refresh tokens
 			accessTokenID, err := uuid.NewUUID()
 			if err != nil {
-				c.XML(http.StatusInternalServerError, gin.H{
-					"error": "Unable to generate access token ID",
+				c.XML(http.StatusInternalServerError, config.ErrorResponse{
+					Message: "Unable to generate access token ID",
 				})
 				return
 			}
 			refreshTokenID, err := uuid.NewUUID()
 			if err != nil {
-				c.XML(http.StatusInternalServerError, gin.H{
-					"error": "Unable to generate refresh token ID",
+				c.XML(http.StatusInternalServerError, config.ErrorResponse{
+					Message: "Unable to generate refresh token ID",
 				})
 				return
 			}
@@ -441,15 +449,15 @@ func LoginUserHandler(c *gin.Context) {
 			// Sign access and refresh tokens
 			signedToken, err := token.SignedString([]byte(config.ApiCfg.JwtSecret))
 			if err != nil {
-				c.XML(http.StatusInternalServerError, gin.H{
-					"error": "Unable to sign access token",
+				c.XML(http.StatusInternalServerError, config.ErrorResponse{
+					Message: "Unable to sign access token",
 				})
 				return
 			}
 			signedRefreshToken, err := refreshToken.SignedString([]byte(config.ApiCfg.JwtSecret))
 			if err != nil {
-				c.XML(http.StatusInternalServerError, gin.H{
-					"error": "Unable to sign refresh token",
+				c.XML(http.StatusInternalServerError, config.ErrorResponse{
+					Message: "Unable to sign refresh token",
 				})
 				return
 			}
@@ -467,7 +475,7 @@ func LoginUserHandler(c *gin.Context) {
 	}
 
 	// Send an error message if no user was found
-	c.XML(http.StatusUnauthorized, gin.H{
-		"error": "User not found",
+	c.XML(http.StatusUnauthorized, config.ErrorResponse{
+		Message: "User not found",
 	})
 }

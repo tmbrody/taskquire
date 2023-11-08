@@ -2,6 +2,10 @@
 INSERT INTO tasks(id, name, description, project_id, team_id, owner_id, parent_id, created_at, updated_at)
 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
 
+-- name: GetTaskByID :one
+SELECT * FROM tasks
+WHERE id = ?;
+
 -- name: GetTaskByName :one
 SELECT * FROM tasks
 WHERE name = ?;

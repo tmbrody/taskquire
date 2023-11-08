@@ -32,8 +32,8 @@ func CreateProjectHandler(c *gin.Context) {
 
 	// Bind the XML request body to the params struct.
 	if err := c.ShouldBindXML(&params); err != nil {
-		c.XML(http.StatusBadRequest, gin.H{
-			"error": "Invalid XML",
+		c.XML(http.StatusBadRequest, config.ErrorResponse{
+			Message: "Invalid XML",
 		})
 		return
 	}
@@ -41,8 +41,8 @@ func CreateProjectHandler(c *gin.Context) {
 	// Generate a new UUID as the project ID.
 	projectID, err := uuid.NewUUID()
 	if err != nil {
-		c.XML(http.StatusBadRequest, gin.H{
-			"error": "Unable to generate project ID",
+		c.XML(http.StatusBadRequest, config.ErrorResponse{
+			Message: "Unable to generate project ID",
 		})
 		return
 	}
@@ -60,8 +60,8 @@ func CreateProjectHandler(c *gin.Context) {
 	// Create the project in the database.
 	_, err = db.CreateProject(c, args)
 	if err != nil {
-		c.XML(http.StatusInternalServerError, gin.H{
-			"error": "Unable to create new project",
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to create new project",
 		})
 		return
 	}
@@ -78,8 +78,8 @@ func GetProjectsHandler(c *gin.Context) {
 	// Get the database connection from the context.
 	db, errBool := c.Value(string(config.DbContextKey)).(*database.Queries)
 	if !errBool {
-		c.XML(http.StatusInternalServerError, gin.H{
-			"error": "Unable to get database connection",
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to get database connection",
 		})
 		return
 	}
@@ -89,8 +89,8 @@ func GetProjectsHandler(c *gin.Context) {
 
 	// Check if the organization name is missing.
 	if orgNameParam == "" {
-		c.XML(http.StatusBadRequest, gin.H{
-			"error": "Organization name is missing",
+		c.XML(http.StatusBadRequest, config.ErrorResponse{
+			Message: "Organization name is missing",
 		})
 		return
 	}
@@ -98,8 +98,8 @@ func GetProjectsHandler(c *gin.Context) {
 	// Get the organization information from the database.
 	org, err := db.GetOrgByName(c, orgNameParam)
 	if err != nil {
-		c.XML(http.StatusInternalServerError, gin.H{
-			"error": "Unable to get organization",
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to get organization",
 		})
 		return
 	}
@@ -107,8 +107,8 @@ func GetProjectsHandler(c *gin.Context) {
 	// Get the projects associated with the organization.
 	projects, err := db.GetProjectsByOrgID(c, org.ID)
 	if err != nil {
-		c.XML(http.StatusInternalServerError, gin.H{
-			"error": "Unable to get projects",
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to get projects",
 		})
 		return
 	}
@@ -137,8 +137,8 @@ func GetOneProjectHandler(c *gin.Context) {
 	// Get the database connection from the context.
 	db, errBool := c.Value(string(config.DbContextKey)).(*database.Queries)
 	if !errBool {
-		c.XML(http.StatusInternalServerError, gin.H{
-			"error": "Unable to get database connection",
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to get database connection",
 		})
 		return
 	}
@@ -148,8 +148,8 @@ func GetOneProjectHandler(c *gin.Context) {
 
 	// Check if the organization name is missing.
 	if orgNameParam == "" {
-		c.XML(http.StatusBadRequest, gin.H{
-			"error": "Organization name is missing",
+		c.XML(http.StatusBadRequest, config.ErrorResponse{
+			Message: "Organization name is missing",
 		})
 		return
 	}
@@ -157,8 +157,8 @@ func GetOneProjectHandler(c *gin.Context) {
 	// Get the organization information from the database.
 	org, err := db.GetOrgByName(c, orgNameParam)
 	if err != nil {
-		c.XML(http.StatusInternalServerError, gin.H{
-			"error": "Unable to get organization",
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to get organization",
 		})
 		return
 	}
@@ -166,8 +166,8 @@ func GetOneProjectHandler(c *gin.Context) {
 	// Get the projects associated with the organization.
 	projects, err := db.GetProjectsByOrgID(c, org.ID)
 	if err != nil {
-		c.XML(http.StatusInternalServerError, gin.H{
-			"error": "Unable to get projects",
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to get projects",
 		})
 		return
 	}
@@ -177,8 +177,8 @@ func GetOneProjectHandler(c *gin.Context) {
 
 	// Check if the project name is missing.
 	if projectNameParam == "" {
-		c.XML(http.StatusBadRequest, gin.H{
-			"error": "Project name is missing",
+		c.XML(http.StatusBadRequest, config.ErrorResponse{
+			Message: "Project name is missing",
 		})
 		return
 	}
@@ -197,8 +197,8 @@ func GetOneProjectHandler(c *gin.Context) {
 	// Get the teams associated with the project.
 	teams, err := db.GetAllTeamsFromProject(c, project.ID)
 	if err != nil {
-		c.XML(http.StatusInternalServerError, gin.H{
-			"error": "Unable to get project teams",
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to get project teams",
 		})
 		return
 	}
@@ -208,8 +208,8 @@ func GetOneProjectHandler(c *gin.Context) {
 	for _, team := range teams {
 		t, err := db.GetTeamByID(c, team.TeamID)
 		if err != nil {
-			c.XML(http.StatusInternalServerError, gin.H{
-				"error": "Unable to get project's team name",
+			c.XML(http.StatusInternalServerError, config.ErrorResponse{
+				Message: "Unable to get project's team name",
 			})
 			return
 		}
@@ -222,8 +222,8 @@ func GetOneProjectHandler(c *gin.Context) {
 	// Get the tasks associated with the project.
 	tasks, err := db.GetTasksByProjectID(c, project.ID)
 	if err != nil {
-		c.XML(http.StatusInternalServerError, gin.H{
-			"error": "Unable to get project teams",
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to get project teams",
 		})
 		return
 	}
@@ -272,8 +272,8 @@ func UpdateProjectHandler(c *gin.Context) {
 
 	// Bind the XML request body to the params struct.
 	if err := c.ShouldBindXML(&params); err != nil {
-		c.XML(http.StatusBadRequest, gin.H{
-			"error": "Invalid XML",
+		c.XML(http.StatusBadRequest, config.ErrorResponse{
+			Message: "Invalid XML",
 		})
 		return
 	}
@@ -301,8 +301,8 @@ func UpdateProjectHandler(c *gin.Context) {
 	// Update the project in the database.
 	_, err := db.UpdateProject(c, args)
 	if err != nil {
-		c.XML(http.StatusInternalServerError, gin.H{
-			"error": "Unable to update project",
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to update project",
 		})
 		return
 	}
@@ -408,8 +408,8 @@ func DeleteProjectHandler(c *gin.Context) {
 	// Delete the project from the database.
 	_, err := db.DeleteProject(c, project.ID)
 	if err != nil {
-		c.XML(http.StatusInternalServerError, gin.H{
-			"error": "Unable to delete project",
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to delete project",
 		})
 		return
 	}
