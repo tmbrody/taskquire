@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"database/sql"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -12,57 +13,50 @@ import (
 	"github.com/tmbrody/taskquire/internal/database"
 )
 
-// CreateTeamHandler handles the creation of a new team based on XML input data.
+// CreateTeamHandler handles the creation of a new team.
 func CreateTeamHandler(c *gin.Context) {
-	// Extract token, database connection, and user information from the request context.
+	// Extract the JWT token, database connection, and user info.
 	token, _, db := ExtractDBAndToken(c)
 
-	// Check if the token is missing.
 	if token == nil {
 		return
 	}
 
-	// Define a struct to hold the XML request parameters.
+	// Define parameters for the new team.
 	var params struct {
 		Name        string `XML:"name"`
 		Description string `XML:"description"`
 	}
 
-	// Bind XML data from the request to the params struct.
+	// Parse XML request body into the params struct.
 	if err := c.ShouldBindXML(&params); err != nil {
-		// If there's an error while binding XML data, return a bad request error.
-		c.XML(http.StatusBadRequest, gin.H{
-			"error": "Invalid XML",
+		c.XML(http.StatusBadRequest, config.ErrorResponse{
+			Message: "Invalid XML",
 		})
 		return
 	}
 
-	// Extract the user ID from the JWT token's claims.
+	// Get the user ID from the JWT token.
 	userID := token.Claims.(jwt.MapClaims)["Subject"].(string)
-
-	// Check if user ID couldn't be extracted from the token.
 	if userID == "" {
-		c.XML(http.StatusInternalServerError, gin.H{
-			"error": "Unable to get user ID from JWT token",
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to get user ID from JWT token",
 		})
 		return
 	}
 
-	// Generate a new UUID for the team ID.
+	// Generate a new team ID.
 	teamID, err := uuid.NewUUID()
 	if err != nil {
-		// If there's an error while generating a UUID, return a bad request error.
-		c.XML(http.StatusBadRequest, gin.H{
-			"error": "Unable to generate team ID",
+		c.XML(http.StatusBadRequest, config.ErrorResponse{
+			Message: "Unable to generate team ID",
 		})
 		return
 	}
 
-	// Get the task description from the params or use the current task description if it's empty.
+	// Prepare team description.
 	teamDescriptionString := params.Description
-
 	var teamDescription sql.NullString
-
 	if teamDescriptionString != "" {
 		teamDescription.String = teamDescriptionString
 		teamDescription.Valid = true
@@ -71,8 +65,8 @@ func CreateTeamHandler(c *gin.Context) {
 		teamDescription.Valid = false
 	}
 
-	// Create arguments for creating a new team in the database.
-	args := database.CreateTeamParams{
+	// Create arguments for creating the team.
+	argsCreate := database.CreateTeamParams{
 		ID:          teamID.String(),
 		Name:        params.Name,
 		Description: teamDescription,
@@ -81,46 +75,43 @@ func CreateTeamHandler(c *gin.Context) {
 		UpdatedAt:   time.Now(),
 	}
 
-	// Attempt to create the new team in the database.
-	_, err = db.CreateTeam(c, args)
+	// Call the database function to create the team.
+	_, err = db.CreateTeam(c, argsCreate)
 	if err != nil {
-		// If there's an error while creating the team, return an internal server error.
-		c.XML(http.StatusInternalServerError, gin.H{
-			"error": "Unable to create new team",
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to create new team",
 		})
 		return
 	}
 
-	// Return a success response with the created team data.
-	c.XML(http.StatusCreated, args)
+	// Return the created team as XML response.
+	c.XML(http.StatusCreated, argsCreate)
 }
 
-// GetTeamsHandler is a handler function that retrieves a list of teams from a database and responds with XML data.
+// GetTeamsHandler handles retrieving a list of all teams.
 func GetTeamsHandler(c *gin.Context) {
-	// Attempt to retrieve the database connection from the Gin context
+	// Retrieve the database connection.
 	db, errBool := c.Value(string(config.DbContextKey)).(*database.Queries)
 	if !errBool {
-		// If unable to get the database connection, respond with an internal server error message in XML format
-		c.XML(http.StatusInternalServerError, gin.H{
-			"error": "Unable to get database connection",
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to get database connection",
 		})
 		return
 	}
 
-	// Retrieve a list of teams from the database
+	// Retrieve all teams from the database.
 	teams, err := db.GetAllTeams(c)
 	if err != nil {
-		// If there's an error while getting teams from the database, respond with an internal server error message in XML format
-		c.XML(http.StatusInternalServerError, gin.H{
-			"error": "Unable to get teams",
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to get teams",
 		})
 		return
 	}
 
-	// Create a slice to hold the team data in a map format
+	// Prepare a slice to store team information.
 	var teamMap []gin.H
 	for _, team := range teams {
-		// Append team information to the teamMap slice
+		// Add team information to the slice.
 		teamMap = append(teamMap, gin.H{
 			"ID":          team.ID,
 			"Name":        team.Name,
@@ -131,102 +122,125 @@ func GetTeamsHandler(c *gin.Context) {
 		})
 	}
 
-	// Respond with the list of teams in XML format with a 200 OK status
+	// Return the list of teams as an XML response.
 	c.XML(http.StatusOK, gin.H{
 		"Teams": teamMap,
 	})
 }
 
-// GetOneTeamHandler is a handler function that retrieves a single team based on a name from the database and responds with XML data.
+// GetOneTeamHandler handles retrieving information about a single team.
 func GetOneTeamHandler(c *gin.Context) {
-	// Get the database connection from the context
+	// Retrieve the database connection.
 	db, errBool := c.Value(string(config.DbContextKey)).(*database.Queries)
 	if !errBool {
-		// If unable to get the database connection, return an internal server error response
-		c.XML(http.StatusInternalServerError, gin.H{
-			"error": "Unable to get database connection",
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to get database connection",
 		})
 		return
 	}
 
-	// Get the team name from the parameter.
+	// Retrieve the team name from the URL parameter.
 	teamNameParam := c.Param("teamName")
 
-	// Check if the team name is missing. If so, return a Bad Request response.
 	if teamNameParam == "" {
-		c.XML(http.StatusBadRequest, gin.H{
-			"error": "Team name is missing",
+		c.XML(http.StatusBadRequest, config.ErrorResponse{
+			Message: "Team name is missing",
 		})
 		return
 	}
 
-	// Retrieve a team with a certain name from the database
+	// Retrieve team information from the database.
 	team, err := db.GetTeamByName(c, teamNameParam)
 	if err != nil {
-		// If there is an error while getting the team, return an internal server error response
-		c.XML(http.StatusInternalServerError, gin.H{
-			"error": "Unable to get team",
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to get team",
 		})
 		return
 	}
 
-	// Prepare the result data to be sent back as an XML response
-	result := database.Team{
-		Name:        team.Name,
-		Description: team.Description,
-		OwnerID:     team.OwnerID,
-		CreatedAt:   team.CreatedAt,
-		UpdatedAt:   team.UpdatedAt,
+	// Retrieve users associated with the team.
+	users, err := db.GetAllUsersFromTeam(c, team.ID)
+	if err != nil {
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to get team users",
+		})
+		return
 	}
 
-	// Return the public information of the team as an XML response
-	c.XML(http.StatusOK, result)
+	// Prepare a list of user names in the team.
+	var userNames []string
+	for _, user := range users {
+		u, err := db.GetUserByID(c, user.UserID)
+		if err != nil {
+			c.XML(http.StatusInternalServerError, config.ErrorResponse{
+				Message: "Unable to get team user name",
+			})
+			return
+		}
+		userNames = append(userNames, u.Name)
+	}
+
+	// Create a UserList struct to store user names.
+	userList := UserList{Users: userNames}
+
+	// Prepare team information for response.
+	var teamMap []gin.H
+	teamMap = append(teamMap, gin.H{
+		"ID":          team.ID,
+		"Name":        team.Name,
+		"Description": team.Description,
+		"OwnerID":     team.OwnerID,
+		"CreatedAt":   team.CreatedAt,
+		"UpdatedAt":   team.UpdatedAt,
+		"Users":       userList,
+	})
+
+	// Return team information as an XML response.
+	c.XML(http.StatusOK, teamMap)
 }
 
-// UpdateTeamHandler handles requests to update team information.
+// UpdateTeamHandler handles updating team information.
 func UpdateTeamHandler(c *gin.Context) {
-	// Extract the authentication token, database connection, and user from the context.
+	// Extract the JWT token, database connection, and user info.
 	token, _, db := ExtractDBAndToken(c)
 
-	// If the authentication token is not present, return early.
 	if token == nil {
 		return
 	}
 
-	// Verify that the user owns the team based on the token.
-	team := VerifyTeamOwnership(c, token, db)
+	// Retrieve the team name from the URL parameter.
+	teamNameParam := c.Param("teamName")
 
-	// If the team is not found or the user doesn't own it, return early.
+	// Verify team ownership based on the token and team name.
+	team := VerifyTeamOwnershipFromParam(c, token, db, teamNameParam)
+
 	if team.ID == "" {
 		return
 	}
 
-	// Define a struct to hold the parameters received in the XML request.
+	// Define parameters for updating the team.
 	var params struct {
 		Name        string `XML:"name"`
 		Description string `XML:"description"`
 	}
 
-	// Bind the XML request body to the params struct.
+	// Parse XML request body into the params struct.
 	if err := c.ShouldBindXML(&params); err != nil {
-		// If there is an error binding the XML, respond with a Bad Request status and an error message.
-		c.XML(http.StatusBadRequest, gin.H{
-			"error": "Invalid XML",
+		c.XML(http.StatusBadRequest, config.ErrorResponse{
+			Message: "Invalid XML",
 		})
 		return
 	}
 
-	// Get the team name from the params or use the current team name if it's empty.
+	// Determine the updated team name.
 	teamName := params.Name
 	if teamName == "" {
 		teamName = team.Name
 	}
 
-	// Get the task description from the params or use the current task description if it's empty.
+	// Prepare team description.
 	teamDescriptionString := params.Description
-
 	var teamDescription sql.NullString
-
 	if teamDescriptionString != "" {
 		teamDescription.String = teamDescriptionString
 		teamDescription.Valid = true
@@ -235,7 +249,7 @@ func UpdateTeamHandler(c *gin.Context) {
 		teamDescription.Valid = false
 	}
 
-	// Prepare the arguments for updating the team in the database.
+	// Create arguments for updating the team.
 	args := database.UpdateTeamParams{
 		ID:          team.ID,
 		Name:        teamName,
@@ -243,48 +257,122 @@ func UpdateTeamHandler(c *gin.Context) {
 		UpdatedAt:   time.Now(),
 	}
 
-	// Update the team in the database.
+	// Call the database function to update the team.
 	_, err := db.UpdateTeam(c, args)
 	if err != nil {
-		// If there is an error updating the team, respond with an Internal Server Error status and an error message.
 		c.XML(http.StatusInternalServerError, gin.H{
-			"error": "Unable to update team",
+			"error": fmt.Sprintf("Unable to update %s", team.Name),
 		})
 		return
 	}
 
-	// Respond with a success status and the updated team information.
+	// Return the updated team information as an XML response.
 	c.XML(http.StatusOK, args)
 }
 
-// DeleteTeamHandler is a function that handles the deletion of an team.
+// AddUserToTeamHandler handles adding a user to a team.
+func AddUserToTeamHandler(c *gin.Context) {
+	// Retrieve the user, team, and database from the URL parameters.
+	user, team, db := GetUserAndTeamByParam(c)
+
+	if user.ID == "" {
+		return
+	}
+
+	// Create arguments for adding the user to the team.
+	args := database.AddUsertoTeamParams{
+		UserID: user.ID,
+		TeamID: team.ID,
+	}
+
+	// Call the database function to add the user to the team.
+	_, err := db.AddUsertoTeam(c, args)
+	if err != nil {
+		c.XML(http.StatusBadRequest, gin.H{
+			"error": fmt.Sprintf("Unable to add %s to %s", user.Name, team.Name),
+		})
+		return
+	}
+
+	// Return a success message as an XML response.
+	c.XML(http.StatusOK, fmt.Sprintf("%s has been added to %s", user.Name, team.Name))
+}
+
+// RemoveUserFromTeamHandler handles removing a user from a team.
+func RemoveUserFromTeamHandler(c *gin.Context) {
+	// Retrieve the user, team, and database from the URL parameters.
+	user, team, db := GetUserAndTeamByParam(c)
+
+	if user.ID == "" {
+		return
+	}
+
+	// Prepare arguments for checking if the user is in the team.
+	argsGet := database.GetOneUserFromTeamParams{
+		UserID: user.ID,
+		TeamID: team.ID,
+	}
+
+	// Check if the user is in the team.
+	_, err := db.GetOneUserFromTeam(c, argsGet)
+	if err != nil {
+		c.XML(http.StatusBadRequest, gin.H{
+			"error": fmt.Sprintf("Unable to find %s in %s", user.Name, team.Name),
+		})
+		return
+	}
+
+	// Prepare arguments for removing the user from the team.
+	argsRemove := database.RemoveUserFromTeamParams{
+		UserID: user.ID,
+		TeamID: team.ID,
+	}
+
+	// Call the database function to remove the user from the team.
+	_, err = db.RemoveUserFromTeam(c, argsRemove)
+	if err != nil {
+		c.XML(http.StatusInternalServerError, gin.H{
+			"error": fmt.Sprintf("Unable to remove %s from %s", user.Name, team.Name),
+		})
+		return
+	}
+
+	// Return a success message as an XML response.
+	c.XML(http.StatusOK, gin.H{
+		"message": fmt.Sprintf("%s has been removed from %s", user.Name, team.Name),
+	})
+}
+
+// DeleteTeamHandler handles deleting a team.
 func DeleteTeamHandler(c *gin.Context) {
-	// Extract the token, user ID, and database connection from the request context.
+	// Extract the JWT token, database connection, and user info.
 	token, _, db := ExtractDBAndToken(c)
 
-	// If there's no token, return early without further processing.
 	if token == nil {
 		return
 	}
 
-	// Verify ownership of the team associated with the token.
-	team := VerifyTeamOwnership(c, token, db)
+	// Retrieve the team name from the URL parameter.
+	teamNameParam := c.Param("teamName")
 
-	// If the team does not exist or there's an issue with ownership verification, return early.
+	// Verify team ownership based on the token and team name.
+	team := VerifyTeamOwnershipFromParam(c, token, db, teamNameParam)
+
 	if team.ID == "" {
 		return
 	}
 
-	// Attempt to delete the team from the database.
+	// Call the database function to delete the team.
 	_, err := db.DeleteTeam(c, team.ID)
-	// If there's an error during the deletion process, return an error response.
 	if err != nil {
 		c.XML(http.StatusInternalServerError, gin.H{
-			"error": "Unable to delete team",
+			"error": fmt.Sprintf("Unable to delete %s", team.Name),
 		})
 		return
 	}
 
-	// Respond with a success status and a message indicating the team was deleted.
-	c.XML(http.StatusOK, "Team has been deleted successfully")
+	// Return a success message as an XML response.
+	c.XML(http.StatusOK, gin.H{
+		"message": fmt.Sprintf("%s has been deleted", team.Name),
+	})
 }

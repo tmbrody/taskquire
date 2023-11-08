@@ -45,12 +45,12 @@ func RefreshTokenHandler(c *gin.Context) {
 
 	// Create a new access token with the same subject as the refresh token.
 	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"ID":        accessTokenID.String(),
-		"Subject":   subject,
-		"Issuer":    "taskquire-access",
-		"IssuedAt":  jwt.NewNumericDate(time.Now()),
-		"ExpiresAt": jwt.NewNumericDate(time.Now().Add(AccessExpiration)),
-		"Revoked":   false,
+		"ID":       accessTokenID.String(),
+		"Subject":  subject,
+		"Issuer":   "taskquire-access",
+		"IssuedAt": jwt.NewNumericDate(time.Now()),
+		// "ExpiresAt": jwt.NewNumericDate(time.Now().Add(AccessExpiration)),
+		"Revoked": false,
 	})
 
 	// Sign the access token with the JWT secret.

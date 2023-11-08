@@ -1,6 +1,10 @@
 package config
 
-import "github.com/tmbrody/taskquire/internal/database"
+import (
+	"encoding/xml"
+
+	"github.com/tmbrody/taskquire/internal/database"
+)
 
 type ApiConfig struct {
 	DB        *database.Queries
@@ -12,3 +16,8 @@ var ApiCfg ApiConfig
 type ContextKey string
 
 var DbContextKey ContextKey = "db"
+
+type ErrorResponse struct {
+	XMLName xml.Name `xml:"Error"`
+	Message string   `xml:"Message"`
+}

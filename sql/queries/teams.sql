@@ -9,9 +9,9 @@ SELECT * FROM teams;
 SELECT * FROM teams
 WHERE name = ?;
 
--- name: GetTeamsByOwnerID :many
+-- name: GetTeamByID :one
 SELECT * FROM teams
-WHERE owner_id = ?;
+WHERE id = ?;
 
 -- name: UpdateTeam :execresult
 UPDATE teams

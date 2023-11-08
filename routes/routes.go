@@ -28,12 +28,14 @@ func SetupApiRoutes(r *gin.RouterGroup) {
 	r.GET("/orgs", handlers.GetOrgsHandler)
 	r.GET("/orgs/:orgName", handlers.GetOneOrgHandler)
 	r.PUT("/orgs/:orgName", handlers.UpdateOrgHandler)
-	r.DELETE("/orgs", handlers.DeleteOrgHandler)
+	r.DELETE("/orgs/:orgName", handlers.DeleteOrgHandler)
 
 	r.POST("/teams", handlers.CreateTeamHandler)
 	r.GET("/teams", handlers.GetTeamsHandler)
 	r.GET("/teams/:teamName", handlers.GetOneTeamHandler)
+	r.PUT("/teams", handlers.AddUserToTeamHandler)
 	r.PUT("/teams/:teamName", handlers.UpdateTeamHandler)
+	r.DELETE("/teams", handlers.RemoveUserFromTeamHandler)
 	r.DELETE("/teams/:teamName", handlers.DeleteTeamHandler)
 
 	r.POST("/users", handlers.CreateUserHandler)
@@ -49,12 +51,16 @@ func SetupApiRoutes(r *gin.RouterGroup) {
 	r.POST("/orgs/:orgName/projects", handlers.CreateProjectHandler)
 	r.GET("/orgs/:orgName/projects", handlers.GetProjectsHandler)
 	r.GET("/orgs/:orgName/projects/:projectName", handlers.GetOneProjectHandler)
+	r.PUT("/orgs/:orgName/projects", handlers.AddTeamToProjectHandler)
 	r.PUT("/orgs/:orgName/projects/:projectName", handlers.UpdateProjectHandler)
+	r.DELETE("/orgs/:orgName/projects", handlers.RemoveTeamFromProjectHandler)
 	r.DELETE("/orgs/:orgName/projects/:projectName", handlers.DeleteProjectHandler)
 
-	r.POST("/orgs/:orgName/projects/:projectName/tasks", handlers.CreateTaskHandler)
-	r.GET("/orgs/:orgName/projects/:projectName/tasks", handlers.GetTasksHandler)
-	r.GET("/orgs/:orgName/projects/:projectName/tasks/:taskName", handlers.GetOneTaskHandler)
-	r.PUT("/orgs/:orgName/projects/:projectName/tasks/:taskName", handlers.UpdateTaskHandler)
-	r.DELETE("/orgs/:orgName/projects/:projectName/tasks/:taskName", handlers.DeleteTaskHandler)
+	r.POST("/orgs/:orgName/projects/:projectName/teams/:teamName/tasks", handlers.CreateTaskHandler)
+	r.GET("/orgs/:orgName/projects/:projectName/teams/:teamName/tasks", handlers.GetTasksHandler)
+
+	r.POST("/orgs/:orgName/projects/:projectName/teams/:teamName/tasks/:taskName", handlers.CreateTaskHandler)
+	r.GET("/orgs/:orgName/projects/:projectName/teams/:teamName/tasks/:taskName", handlers.GetOneTaskHandler)
+	r.PUT("/orgs/:orgName/projects/:projectName/teams/:teamName/tasks/:taskName", handlers.UpdateTaskHandler)
+	r.DELETE("/orgs/:orgName/projects/:projectName/teams/:teamName/tasks/:taskName", handlers.DeleteTaskHandler)
 }

@@ -9,6 +9,10 @@ SELECT * FROM orgs;
 SELECT * FROM orgs
 WHERE name = ?;
 
+-- name: GetOrgByID :one
+SELECT * FROM orgs
+WHERE id = ?;
+
 -- name: UpdateOrg :execresult
 UPDATE orgs
 SET name = ?, description = ?, updated_at = ?
