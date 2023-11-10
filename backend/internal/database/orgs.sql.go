@@ -117,6 +117,41 @@ func (q *Queries) GetOrgByName(ctx context.Context, name string) (Org, error) {
 	return i, err
 }
 
+const getOrgsByOwnerID = `-- name: GetOrgsByOwnerID :many
+SELECT id, name, created_at, updated_at, description, owner_id FROM orgs
+WHERE owner_id = ?
+`
+
+func (q *Queries) GetOrgsByOwnerID(ctx context.Context, ownerID string) ([]Org, error) {
+	rows, err := q.db.QueryContext(ctx, getOrgsByOwnerID, ownerID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Org
+	for rows.Next() {
+		var i Org
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.Description,
+			&i.OwnerID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const updateOrg = `-- name: UpdateOrg :execresult
 UPDATE orgs
 SET name = ?, description = ?, updated_at = ?

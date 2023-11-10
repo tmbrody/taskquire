@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"database/sql"
+	"encoding/xml"
 	"net/http"
 	"time"
 
@@ -158,10 +159,23 @@ func GetTasksHandler(c *gin.Context) {
 		})
 	}
 
-	// Respond with the list of tasks.
-	c.XML(http.StatusOK, gin.H{
-		"Tasks": taskMap,
-	})
+	xmlData, err := xml.Marshal(gin.H{"Tasks": taskMap})
+	if err != nil {
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to marshal XML data",
+		})
+		return
+	}
+
+	xmlString, err := ConvertToCustomXML(xmlData, "task")
+	if err != nil {
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to convert XML data to custom format",
+		})
+		return
+	}
+
+	c.Data(http.StatusOK, "application/xml", []byte(xmlString))
 }
 
 // GetOneTaskHandler is a HTTP request handler for fetching a single task by name.

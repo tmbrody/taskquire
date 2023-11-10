@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/xml"
 	"fmt"
 	"net/http"
 	"time"
@@ -126,10 +127,23 @@ func GetProjectsHandler(c *gin.Context) {
 		})
 	}
 
-	// Return the list of projects in XML format.
-	c.XML(http.StatusOK, gin.H{
-		"Projects": projectMap,
-	})
+	xmlData, err := xml.Marshal(gin.H{"Projects": projectMap})
+	if err != nil {
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to marshal XML data",
+		})
+		return
+	}
+
+	xmlString, err := ConvertToCustomXML(xmlData, "project")
+	if err != nil {
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to convert XML data to custom format",
+		})
+		return
+	}
+
+	c.Data(http.StatusOK, "application/xml", []byte(xmlString))
 }
 
 // GetOneProjectHandler retrieves information for a specific project in an organization.
@@ -238,8 +252,8 @@ func GetOneProjectHandler(c *gin.Context) {
 	taskList := TaskList{Tasks: taskNames}
 
 	// Create a list of project information to be returned.
-	var teamMap []gin.H
-	teamMap = append(teamMap, gin.H{
+	var projectMap []gin.H
+	projectMap = append(projectMap, gin.H{
 		"ID":          project.ID,
 		"Name":        project.Name,
 		"Description": project.Description,
@@ -250,8 +264,23 @@ func GetOneProjectHandler(c *gin.Context) {
 		"Tasks":       taskList,
 	})
 
-	// Return the project information in XML format.
-	c.XML(http.StatusOK, teamMap)
+	xmlData, err := xml.Marshal(gin.H{"Projects": projectMap})
+	if err != nil {
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to marshal XML data",
+		})
+		return
+	}
+
+	xmlString, err := ConvertToCustomXML(xmlData, "project")
+	if err != nil {
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to convert XML data to custom format",
+		})
+		return
+	}
+
+	c.Data(http.StatusOK, "application/xml", []byte(xmlString))
 }
 
 // UpdateProjectHandler updates the details of a project.

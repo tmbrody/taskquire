@@ -5,6 +5,10 @@ VALUES (?, ?, ?, ?, ?, ?);
 -- name: GetAllOrgs :many
 SELECT * FROM orgs;
 
+-- name: GetOrgsByOwnerID :many
+SELECT * FROM orgs
+WHERE owner_id = ?;
+
 -- name: GetOrgByName :one
 SELECT * FROM orgs
 WHERE name = ?;

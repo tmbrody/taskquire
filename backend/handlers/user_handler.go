@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/xml"
 	"net/http"
 	"time"
 
@@ -128,9 +129,24 @@ func GetUsersHandler(c *gin.Context) {
 			"UpdatedAt": user.UpdatedAt,
 		})
 	}
-	c.XML(http.StatusOK, gin.H{
-		"Users": userMap,
-	})
+
+	xmlData, err := xml.Marshal(gin.H{"Users": userMap})
+	if err != nil {
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to marshal XML data",
+		})
+		return
+	}
+
+	xmlString, err := ConvertToCustomXML(xmlData, "user")
+	if err != nil {
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to convert XML data to custom format",
+		})
+		return
+	}
+
+	c.Data(http.StatusOK, "application/xml", []byte(xmlString))
 }
 
 // GetOneUserHandler retrieves information about a specific user by username.
@@ -342,8 +358,26 @@ func DeleteUserHandler(c *gin.Context) {
 		return
 	}
 
+	orgs, err := db.GetOrgsByOwnerID(c, userID)
+	if err != nil {
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to get owner's organizations",
+		})
+		return
+	}
+
+	for _, org := range orgs {
+		_, err := db.DeleteOrg(c, org.ID)
+		if err != nil {
+			c.XML(http.StatusInternalServerError, config.ErrorResponse{
+				Message: "Unable to delete organization",
+			})
+			return
+		}
+	}
+
 	// Delete the user from the database
-	_, err := db.DeleteUser(c, userID)
+	_, err = db.DeleteUser(c, userID)
 
 	// Check for deletion errors
 	if err != nil {

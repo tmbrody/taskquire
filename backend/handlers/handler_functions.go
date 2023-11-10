@@ -3,6 +3,7 @@ package handlers
 import (
 	"net/http"
 	"reflect"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -11,6 +12,28 @@ import (
 	"github.com/tmbrody/taskquire/internal/database"
 	"github.com/tmbrody/taskquire/tokenPackage"
 )
+
+func ConvertToCustomXML(xmlData []byte, singularTableName string) (string, error) {
+	// Define the opening and closing tags
+	opening_tag := "<" + singularTableName
+	closing_tag := "</" + singularTableName
+
+	// Convert XML data to string and replace <map> tags with the opening and closing tags
+	xmlString := string(xmlData)
+	xmlString = strings.ReplaceAll(xmlString, "<map>", opening_tag+">")
+	xmlString = strings.ReplaceAll(xmlString, "</map>", closing_tag+">")
+
+	// Replace the first occurence of the opening tag with a plural opening tag
+	xmlString = strings.Replace(xmlString, opening_tag+">", opening_tag+"s>", 1)
+
+	// Replace the last occurence of the closing tag with a plural closing tag
+	lastOrgIndex := strings.LastIndex(xmlString, closing_tag+">")
+	if lastOrgIndex != -1 {
+		xmlString = xmlString[:lastOrgIndex] + closing_tag + "s>" + xmlString[lastOrgIndex+len(closing_tag+">"):]
+	}
+
+	return xmlString, nil
+}
 
 // CheckEmptyFields checks if any fields in a struct are empty.
 func CheckEmptyFields(i interface{}) bool {

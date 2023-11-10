@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"database/sql"
+	"encoding/xml"
 	"fmt"
 	"net/http"
 	"time"
@@ -122,10 +123,23 @@ func GetTeamsHandler(c *gin.Context) {
 		})
 	}
 
-	// Return the list of teams as an XML response.
-	c.XML(http.StatusOK, gin.H{
-		"Teams": teamMap,
-	})
+	xmlData, err := xml.Marshal(gin.H{"Teams": teamMap})
+	if err != nil {
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to marshal XML data",
+		})
+		return
+	}
+
+	xmlString, err := ConvertToCustomXML(xmlData, "team")
+	if err != nil {
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to convert XML data to custom format",
+		})
+		return
+	}
+
+	c.Data(http.StatusOK, "application/xml", []byte(xmlString))
 }
 
 // GetOneTeamHandler handles retrieving information about a single team.

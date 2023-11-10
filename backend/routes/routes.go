@@ -8,7 +8,7 @@ import (
 
 func SetupRoutes(r *gin.Engine) {
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"https://*, http://*"},
+		AllowOrigins:     []string{"http://localhost:3000", "https://taskquire.com", "https://www.taskquire.com"},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"*"},
 		ExposeHeaders:    []string{"Link"},
@@ -24,6 +24,15 @@ func SetupRoutes(r *gin.Engine) {
 }
 
 func SetupApiRoutes(r *gin.RouterGroup) {
+	r.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"http://localhost:3000", "https://taskquire.com", "https://www.taskquire.com"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"*"},
+		ExposeHeaders:    []string{"Link"},
+		AllowCredentials: false,
+		MaxAge:           300,
+	}))
+
 	r.POST("/orgs", handlers.CreateOrgHandler)
 	r.GET("/orgs", handlers.GetOrgsHandler)
 	r.GET("/orgs/:orgName", handlers.GetOneOrgHandler)

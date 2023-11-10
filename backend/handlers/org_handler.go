@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/xml"
 	"net/http"
 	"time"
 
@@ -9,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/tmbrody/taskquire/config"
 	"github.com/tmbrody/taskquire/internal/database"
+	"github.com/tmbrody/taskquire/tokenPackage"
 )
 
 // CreateOrgHandler handles the creation of a new organization.
@@ -95,15 +97,42 @@ func GetOrgsHandler(c *gin.Context) {
 		return
 	}
 
-	// Get all organizations from the database.
-	orgs, err := db.GetAllOrgs(c)
+	var token *jwt.Token
 
-	// If there's an error retrieving organizations, return an error.
-	if err != nil {
-		c.XML(http.StatusInternalServerError, config.ErrorResponse{
-			Message: "Unable to get organizations",
-		})
-		return
+	// Extract JWT token from the request header
+	tokenString := tokenPackage.ExtractJWTTokenFromHeader(c.Request)
+
+	// Check if the token is missing or invalid
+	if tokenString != "" {
+		token, _, _ = ExtractDBAndToken(c)
+	}
+
+	var orgs []database.Org
+	var err error
+
+	// If the token is nil, return.
+	if token == nil {
+		// Get all organizations from the database.
+		orgs, err = db.GetAllOrgs(c)
+
+		// If there's an error retrieving organizations, return an error.
+		if err != nil {
+			c.XML(http.StatusInternalServerError, config.ErrorResponse{
+				Message: "Unable to get organizations",
+			})
+			return
+		}
+	} else {
+		// Get all organizations from the database.
+		orgs, err = db.GetOrgsByOwnerID(c, token.Claims.(jwt.MapClaims)["Subject"].(string))
+
+		// If there's an error retrieving organizations, return an error.
+		if err != nil {
+			c.XML(http.StatusInternalServerError, config.ErrorResponse{
+				Message: "Unable to get organizations",
+			})
+			return
+		}
 	}
 
 	// Create a list of organization data to return.
@@ -119,10 +148,23 @@ func GetOrgsHandler(c *gin.Context) {
 		})
 	}
 
-	// Return the list of organizations.
-	c.XML(http.StatusOK, gin.H{
-		"Orgs": orgMap,
-	})
+	xmlData, err := xml.Marshal(gin.H{"Orgs": orgMap})
+	if err != nil {
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to marshal XML data",
+		})
+		return
+	}
+
+	xmlString, err := ConvertToCustomXML(xmlData, "org")
+	if err != nil {
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to convert XML data to custom format",
+		})
+		return
+	}
+
+	c.Data(http.StatusOK, "application/xml", []byte(xmlString))
 }
 
 // GetOneOrgHandler retrieves information about a specific organization by its name.
