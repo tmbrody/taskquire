@@ -401,13 +401,13 @@ func RemoveTeamFromProjectHandler(c *gin.Context) {
 	}
 
 	// Create arguments for removing the team from the project in the database.
-	args_remove := database.RemoveProjectFromTeamParams{
+	args_remove := database.RemoveTeamFromProjectParams{
 		ProjectID: project.ID,
 		TeamID:    team.ID,
 	}
 
 	// Remove the team from the project in the database.
-	_, err = db.RemoveProjectFromTeam(c, args_remove)
+	_, err = db.RemoveTeamFromProject(c, args_remove)
 	if err != nil {
 		c.XML(http.StatusInternalServerError, gin.H{
 			"error": fmt.Sprintf("Unable to remove %s from %s", team.Name, project.Name),

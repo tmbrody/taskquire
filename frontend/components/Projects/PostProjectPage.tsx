@@ -3,22 +3,22 @@ import { useRouter } from 'next/router';
 import Link from 'next/link';
 import Image from 'next/image';
 
-interface UpdateOrgPageProps {}
+interface PostProjectPageProps {}
 
-const UpdateOrgPage: React.FC<UpdateOrgPageProps> = () => {
+const PostProjectPage: React.FC<PostProjectPageProps> = () => {
     const router = useRouter();
-    const { orgName, orgDescription: orgDescription } = router.query;
+    const { orgName } = router.query;
 
-    const [name, setName] = useState(orgName || '');
-    const [description, setDescription] = useState(orgDescription || '');
+    const [name, setName] = useState('');
+    const [description, setDescription] = useState('');
 
-    const handleUpdateOrg = async (event: React.FormEvent) => {
+    const handlePostProject = async (event: React.FormEvent) => {
         event.preventDefault();
 
-        const xmls = `<Org><Name>${name}</Name><Description>${description}</Description></Org>`
+        const xmls = `<Project><Name>${name}</Name><Description>${description}</Description></Project>`
 
-        const response = await fetch(`http://localhost:8080/api/orgs/${orgName}`, {
-            method: 'PUT',
+        const response = await fetch(`http://localhost:8080/api/orgs/${orgName}/projects`, {
+            method: 'POST',
             headers: {
                 'Content-Type': 'application/xml',
                 'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
@@ -26,7 +26,7 @@ const UpdateOrgPage: React.FC<UpdateOrgPageProps> = () => {
             body: xmls,
         });
 
-        router.push('/orgs/your_orgs')
+        router.push(`http://localhost:3000/orgs/${orgName}/projects`)
     }
 
     return (
@@ -56,7 +56,7 @@ const UpdateOrgPage: React.FC<UpdateOrgPageProps> = () => {
             <div className="bg-gray-800 p-8 rounded-lg shadow-md w-80">
                 <h1 className="text-white text-3xl font-bold mb-4">Welcome to Taskquire</h1>
                 <p className="text-gray-300 mb-6">Your task management solution</p>
-                <form onSubmit={handleUpdateOrg}>
+                <form onSubmit={handlePostProject}>
                     <input
                         className="mb-4 w-full px-3 py-2 border border-gray-300 rounded-md" 
                         type="text" 
@@ -75,7 +75,7 @@ const UpdateOrgPage: React.FC<UpdateOrgPageProps> = () => {
                         className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-full hover:shadow-lg w-full" 
                         type="submit"
                     >
-                        Update Org
+                        Create Project
                     </button>
                 </form>
             </div>
@@ -83,4 +83,4 @@ const UpdateOrgPage: React.FC<UpdateOrgPageProps> = () => {
     );
 };
 
-export default UpdateOrgPage;
+export default PostProjectPage;

@@ -3,21 +3,20 @@ import { useRouter } from 'next/router';
 import Link from 'next/link';
 import Image from 'next/image';
 
-interface PostProjectPageProps {}
+interface PostTeamPageProps {}
 
-const PostProjectPage: React.FC<PostProjectPageProps> = () => {
+const PostTeamPage: React.FC<PostTeamPageProps> = () => {
     const router = useRouter();
-    const { orgName } = router.query;
 
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
 
-    const handlePostProject = async (event: React.FormEvent) => {
+    const handlePostTeam = async (event: React.FormEvent) => {
         event.preventDefault();
 
-        const xmls = `<Project><Name>${name}</Name><Description>${description}</Description></Project>`
+        const xmls = `<Team><Name>${name}</Name><Description>${description}</Description></Team>`
 
-        const response = await fetch(`http://localhost:8080/api/orgs/${orgName}/projects`, {
+        const response = await fetch(`http://localhost:8080/api/teams`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/xml',
@@ -26,10 +25,7 @@ const PostProjectPage: React.FC<PostProjectPageProps> = () => {
             body: xmls,
         });
 
-        // const data = await response.text();
-        // console.log(data);
-
-        router.push(`/orgs/${orgName}/projects`)
+        router.push(`http://localhost:3000/teams/your_teams`)
     }
 
     return (
@@ -59,7 +55,7 @@ const PostProjectPage: React.FC<PostProjectPageProps> = () => {
             <div className="bg-gray-800 p-8 rounded-lg shadow-md w-80">
                 <h1 className="text-white text-3xl font-bold mb-4">Welcome to Taskquire</h1>
                 <p className="text-gray-300 mb-6">Your task management solution</p>
-                <form onSubmit={handlePostProject}>
+                <form onSubmit={handlePostTeam}>
                     <input
                         className="mb-4 w-full px-3 py-2 border border-gray-300 rounded-md" 
                         type="text" 
@@ -78,7 +74,7 @@ const PostProjectPage: React.FC<PostProjectPageProps> = () => {
                         className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-full hover:shadow-lg w-full" 
                         type="submit"
                     >
-                        Create Project
+                        Create Team
                     </button>
                 </form>
             </div>
@@ -86,4 +82,4 @@ const PostProjectPage: React.FC<PostProjectPageProps> = () => {
     );
 };
 
-export default PostProjectPage;
+export default PostTeamPage;

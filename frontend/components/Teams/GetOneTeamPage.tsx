@@ -1,27 +1,38 @@
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/router';
 import Link from 'next/link';
 import Image from 'next/image';
 import xml2js from 'xml2js';
 
-interface Org {
+interface Description {
+    String: string[];
+    Valid: string[];
+}
+
+interface Team {
     Name: string[];
-    Description: string[];
+    Description: Description;
     OwnerID: string[];
     CreatedAt: string[];
     UpdatedAt: string[];
+    Projects: string[];
 }
 
-interface AllOrgsPageProps {}
+interface OneTeamAllProjectsPageProps {}
 
-const AllOrgsPage: React.FC<AllOrgsPageProps> = () => {
-    const [orgs, setOrgs] = useState<Org[]>([]);
+const OneTeamAllProjectsPage: React.FC<OneTeamAllProjectsPageProps> = () => {
+    const [team, setTeam] = useState<Team | null>(null);
+    const router = useRouter();
+
+    const { teamName } = router.query;
 
     useEffect(() => {
-        const fetchOrgs = async () => {
-            const response = await fetch('http://localhost:8080/api/orgs', {
+        const fetchTeam = async () => {
+            const response = await fetch(`http://localhost:8080/api/teams/${teamName}`, {
                 method: 'GET',
                 headers: {
-                    'Content-Type': 'application/xml'
+                    'Content-Type': 'application/xml',
+                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
                 },
             });
 
@@ -29,17 +40,15 @@ const AllOrgsPage: React.FC<AllOrgsPageProps> = () => {
 
             xml2js.parseString(data, { explicitArray: false }, (err, result) => {
                 if (!err) {
-                    if (result.orgs.org) {
-                        setOrgs(result.orgs.org);
-                    } else {
-                        setOrgs(result.orgs);
-                    }
+                    setTeam(result.teams.team);
                 }
             });
         }
 
-        fetchOrgs();
-    }, []);
+        if (teamName) {
+            fetchTeam();
+        }
+    }, [teamName]);
 
     return (
         <div className="bg-gray-900 min-h-screen flex flex-col items-center justify-center">
@@ -65,19 +74,21 @@ const AllOrgsPage: React.FC<AllOrgsPageProps> = () => {
                     </Link>
                 </div>
             </div>
-            {orgs && (Array.isArray(orgs) ? orgs : [orgs]).map((org, index) => (
-                <Link href="/orgs/[orgName]" as={`/orgs/${org.Name}`} key={index}>
-                    <div className="bg-gray-800 p-8 rounded-lg shadow-md w-80 mb-4">
-                        <h1 className="text-white text-3xl font-bold mb-4">{org.Name}</h1>
-                        <p className="text-gray-300 mb-6"><strong>Description:</strong> {org.Description}</p>
-                        <p className="text-gray-300 mb-6"><strong>Owner ID:</strong> {org.OwnerID}</p>
-                        <p className="text-gray-300 mb-6"><strong>Created At:</strong> {org.CreatedAt}</p>
-                        <p className="text-gray-300 mb-6"><strong>Updated At:</strong> {org.UpdatedAt}</p>
-                    </div>
-                </Link>
-            ))}
+            {team && (
+                <div className="bg-gray-800 p-8 rounded-lg shadow-md w-80 mb-4">
+                    <h1 className="text-white text-3xl font-bold mb-4">{team.Name}</h1>
+                    {String(team.Description.Valid) === 'true' ? (
+                        <p className="text-gray-300 mb-6"><strong>Description:</strong> {team.Description.String}</p>) : (
+                        <p className="text-gray-300 mb-6"><strong>Description:</strong> {null}</p>)
+                    }
+                    <p className="text-gray-300 mb-6"><strong>Owner ID:</strong> {team.OwnerID}</p>
+                    <p className="text-gray-300 mb-6"><strong>Created At:</strong> {team.CreatedAt}</p>
+                    <p className="text-gray-300 mb-6"><strong>Updated At:</strong> {team.UpdatedAt}</p>
+                    <p className="text-gray-300 mb-6"><strong>Projects:</strong> {team.Projects}</p>
+                </div>
+            )}
         </div>
     );
 };
 
-export default AllOrgsPage;
+export default OneTeamAllProjectsPage;

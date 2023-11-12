@@ -1,5 +1,5 @@
-import PostOrgPage from "../../components/PostOrgPage";
+import PostOrgPage from "../../components/Orgs/PostOrgPage";
 
-export default function ViewOrgs() {
+export default function PostOrg() {
     return <PostOrgPage />;
 };

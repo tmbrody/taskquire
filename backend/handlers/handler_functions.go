@@ -126,7 +126,7 @@ func VerifyTeamOwnershipFromParam(c *gin.Context, token *jwt.Token, db *database
 	// Check for errors when retrieving the team
 	if err != nil {
 		c.XML(http.StatusInternalServerError, config.ErrorResponse{
-			Message: "Unable to get team",
+			Message: "Unable to get team from the name",
 		})
 		return database.Team{}
 	}
@@ -411,8 +411,8 @@ func GetTeamAndProjectByParam(c *gin.Context) (database.Project, database.Team, 
 
 	// Define a struct to bind XML parameters to
 	var params struct {
-		Project string `XML:"name"`
-		Team    string `XML:"name"`
+		Project string `XML:"project"`
+		Team    string `XML:"team"`
 	}
 
 	// Bind XML parameters from the request to the params struct
@@ -430,7 +430,7 @@ func GetTeamAndProjectByParam(c *gin.Context) (database.Project, database.Team, 
 	// If there is an error or team ID is empty, return empty Project, Team, and nil Queries
 	if err != nil {
 		c.XML(http.StatusInternalServerError, config.ErrorResponse{
-			Message: "Unable to get team",
+			Message: "Unable to get team from the name",
 		})
 		return database.Project{}, database.Team{}, nil
 	}
@@ -640,7 +640,7 @@ func SetTeamUpdatedTime(c *gin.Context, db *database.Queries, teamID string) {
 	if err != nil {
 		// Return an internal server error response with an error message
 		c.XML(http.StatusInternalServerError, config.ErrorResponse{
-			Message: "Unable to get team",
+			Message: "Unable to get team from ID",
 		})
 		return
 	}

@@ -1,4 +1,4 @@
-import UpdateProjectPage from "../../../../../components/UpdateProjectPage";
+import UpdateProjectPage from "../../../../../components/Projects/UpdateProjectPage";
 
 export default function UpdateProject() {
     return <UpdateProjectPage />;

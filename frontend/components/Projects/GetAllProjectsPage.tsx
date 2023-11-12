@@ -143,7 +143,7 @@ const OneOrgAllProjectsPage: React.FC<OneOrgAllProjectsPageProps> = () => {
                         </Link>
                         <button onClick={() => deleteProject(String(org.Name), String(project.Name))}>X</button>
                     </div>
-                    <Link href="/orgs/[orgName]/projects/[projectName]" as={`/orgs/${org.Name}/projects/${project.Name}`} key={index}>
+                    <Link href="/orgs/[orgName]/projects/[projectName]/teams" as={`/orgs/${org.Name}/projects/${project.Name}/teams`} key={index}>
                         <h1 className="text-white text-3xl font-bold mb-4">{project.Name}</h1>
                         <p className="text-gray-300 mb-6"><strong>Description:</strong> {project.Description}</p>
                         <p className="text-gray-300 mb-6"><strong>Org ID:</strong> {project.OrgID}</p>

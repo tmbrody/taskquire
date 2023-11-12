@@ -5,6 +5,10 @@ VALUES (?, ?, ?, ?, ?, ?);
 -- name: GetAllTeams :many
 SELECT * FROM teams;
 
+-- name: GetTeamsByOwnerID :many
+SELECT * FROM teams
+WHERE owner_id = ?;
+
 -- name: GetTeamByName :one
 SELECT * FROM teams
 WHERE name = ?;

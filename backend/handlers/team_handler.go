@@ -12,6 +12,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/tmbrody/taskquire/config"
 	"github.com/tmbrody/taskquire/internal/database"
+	"github.com/tmbrody/taskquire/tokenPackage"
 )
 
 // CreateTeamHandler handles the creation of a new team.
@@ -100,13 +101,42 @@ func GetTeamsHandler(c *gin.Context) {
 		return
 	}
 
-	// Retrieve all teams from the database.
-	teams, err := db.GetAllTeams(c)
-	if err != nil {
-		c.XML(http.StatusInternalServerError, config.ErrorResponse{
-			Message: "Unable to get teams",
-		})
-		return
+	var token *jwt.Token
+
+	// Extract JWT token from the request header
+	tokenString := tokenPackage.ExtractJWTTokenFromHeader(c.Request)
+
+	// Check if the token is missing or invalid
+	if tokenString != "" {
+		token, _, _ = ExtractDBAndToken(c)
+	}
+
+	var teams []database.Team
+	var err error
+
+	// If the token is nil, return.
+	if token == nil {
+		// Get all organizations from the database.
+		teams, err = db.GetAllTeams(c)
+
+		// If there's an error retrieving organizations, return an error.
+		if err != nil {
+			c.XML(http.StatusInternalServerError, config.ErrorResponse{
+				Message: "Unable to get teams",
+			})
+			return
+		}
+	} else {
+		// Get all organizations from the database.
+		teams, err = db.GetTeamsByOwnerID(c, token.Claims.(jwt.MapClaims)["Subject"].(string))
+
+		// If there's an error retrieving organizations, return an error.
+		if err != nil {
+			c.XML(http.StatusInternalServerError, config.ErrorResponse{
+				Message: "Unable to get teams",
+			})
+			return
+		}
 	}
 
 	// Prepare a slice to store team information.
@@ -167,10 +197,35 @@ func GetOneTeamHandler(c *gin.Context) {
 	team, err := db.GetTeamByName(c, teamNameParam)
 	if err != nil {
 		c.XML(http.StatusInternalServerError, config.ErrorResponse{
-			Message: "Unable to get team",
+			Message: "Unable to get team from name",
 		})
 		return
 	}
+
+	// Get the projects associated with the team.
+	projectIDs, err := db.GetAllProjectsFromTeam(c, team.ID)
+	if err != nil {
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to get projects",
+		})
+		return
+	}
+
+	// Prepare a list of user names in the team.
+	var projectNames []string
+	for _, project := range projectIDs {
+		p, err := db.GetProjectByID(c, project.ProjectID)
+		if err != nil {
+			c.XML(http.StatusInternalServerError, config.ErrorResponse{
+				Message: "Unable to get project name",
+			})
+			return
+		}
+		projectNames = append(projectNames, p.Name)
+	}
+
+	// Create a UserList struct to store user names.
+	projectList := ProjectList{Projects: projectNames}
 
 	// Retrieve users associated with the team.
 	users, err := db.GetAllUsersFromTeam(c, team.ID)
@@ -206,11 +261,115 @@ func GetOneTeamHandler(c *gin.Context) {
 		"OwnerID":     team.OwnerID,
 		"CreatedAt":   team.CreatedAt,
 		"UpdatedAt":   team.UpdatedAt,
+		"Projects":    projectList,
 		"Users":       userList,
 	})
 
-	// Return team information as an XML response.
-	c.XML(http.StatusOK, teamMap)
+	xmlData, err := xml.Marshal(gin.H{"Teams": teamMap})
+	if err != nil {
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to marshal XML data",
+		})
+		return
+	}
+
+	xmlString, err := ConvertToCustomXML(xmlData, "team")
+	if err != nil {
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to convert XML data to custom format",
+		})
+		return
+	}
+
+	c.Data(http.StatusOK, "application/xml", []byte(xmlString))
+}
+
+// GetTeamsFromProjectHandler handles retrieving a list of teams associated with a project.
+func GetTeamsFromProjectHandler(c *gin.Context) {
+	// Get the database connection from the context.
+	db, errBool := c.Value(string(config.DbContextKey)).(*database.Queries)
+	if !errBool {
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to get database connection",
+		})
+		return
+	}
+
+	// Get the project name from the URL parameter.
+	projectNameParam := c.Param("projectName")
+
+	// Check if the project name is missing.
+	if projectNameParam == "" {
+		c.XML(http.StatusBadRequest, config.ErrorResponse{
+			Message: "Project name is missing",
+		})
+		return
+	}
+
+	// Get the project information from the database.
+	project, err := db.GetProjectByName(c, projectNameParam)
+	if err != nil {
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to get organization",
+		})
+		return
+	}
+
+	// Get the teams associated with the project.
+	teamIDs, err := db.GetAllTeamsFromProject(c, project.ID)
+	if err != nil {
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to get projects",
+		})
+		return
+	}
+
+	var teams []database.Team
+
+	for _, team := range teamIDs {
+		// Get the team information from the database.
+		t, err := db.GetTeamByID(c, team.TeamID)
+		if err != nil {
+			c.XML(http.StatusInternalServerError, config.ErrorResponse{
+				Message: "Unable to get team from ID",
+			})
+			return
+		}
+
+		// Add the team information to the slice.
+		teams = append(teams, t)
+	}
+
+	// Create a list of team information to be returned.
+	var teamMap []gin.H
+	for _, team := range teams {
+		teamMap = append(teamMap, gin.H{
+			"ID":          team.ID,
+			"Name":        team.Name,
+			"Description": team.Description,
+			"OwnerID":     team.OwnerID,
+			"CreatedAt":   team.CreatedAt,
+			"UpdatedAt":   team.UpdatedAt,
+		})
+	}
+
+	xmlData, err := xml.Marshal(gin.H{"Teams": teamMap})
+	if err != nil {
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to marshal XML data",
+		})
+		return
+	}
+
+	xmlString, err := ConvertToCustomXML(xmlData, "team")
+	if err != nil {
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to convert XML data to custom format",
+		})
+		return
+	}
+
+	c.Data(http.StatusOK, "application/xml", []byte(xmlString))
 }
 
 // UpdateTeamHandler handles updating team information.

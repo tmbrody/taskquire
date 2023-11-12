@@ -2,57 +2,45 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import xml2js from 'xml2js';
-import { useRouter } from 'next/router';
 
-interface Org {
+interface Description {
+    String: string[];
+    Valid: string[];
+}
+
+interface Team {
     Name: string[];
-    Description: string[];
+    Description: Description;
     OwnerID: string[];
     CreatedAt: string[];
     UpdatedAt: string[];
 }
 
-interface Project {
-    Name: string[];
-    Description: string[];
-    OrgID: string[];
-    CreatedAt: string[];
-    UpdatedAt: string[];
-}
+interface AllTeamsPageProps {}
 
-const OneProjectPage: React.FC = () => {
-    const [projects, setProject] = useState<Project | null>(null);
-
-    const router = useRouter();
-
-    const { orgName } = router.query;
-    const { projectName } = router.query;
+const AllTeamsPage: React.FC<AllTeamsPageProps> = () => {
+    const [teams, setTeams] = useState<Team[]>([]);
 
     useEffect(() => {
-        const fetchProject = async () => {
-            const response = await fetch(`http://localhost:8080/api/orgs/${orgName}/projects/${projectName}`, {
+        const fetchTeams = async () => {
+            const response = await fetch('http://localhost:8080/api/teams', {
                 method: 'GET',
                 headers: {
-                    'Content-Type': 'application/xml',
-                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+                    'Content-Type': 'application/xml'
                 },
             });
 
             const data = await response.text();
 
-            console.log(data);
-
             xml2js.parseString(data, { explicitArray: false }, (err, result) => {
                 if (!err) {
-                    setProject(result.projects.project);
+                    setTeams(result.teams.team);
                 }
             });
         }
 
-        if (projectName) {
-            fetchProject();
-        }
-    }, [projectName]);
+        fetchTeams();
+    }, []);
 
     return (
         <div className="bg-gray-900 min-h-screen flex flex-col items-center justify-center">
@@ -78,17 +66,20 @@ const OneProjectPage: React.FC = () => {
                     </Link>
                 </div>
             </div>
-            {projects && (Array.isArray(projects) ? projects : [projects]).map((project, index) => (
+            {teams && (Array.isArray(teams) ? teams : [teams]).map((team, index) => (
                 <div className="bg-gray-800 p-8 rounded-lg shadow-md w-80 mb-4">
-                    <h1 className="text-white text-3xl font-bold mb-4">{project.Name}</h1>
-                    <p className="text-gray-300 mb-6"><strong>Description:</strong> {project.Description}</p>
-                    <p className="text-gray-300 mb-6"><strong>Owner ID:</strong> {project.OwnerID}</p>
-                    <p className="text-gray-300 mb-6"><strong>Created At:</strong> {project.CreatedAt}</p>
-                    <p className="text-gray-300 mb-6"><strong>Updated At:</strong> {project.UpdatedAt}</p>
+                    <h1 className="text-white text-3xl font-bold mb-4">{team.Name}</h1>
+                    {String(team.Description.Valid) === 'true' ? (
+                        <p className="text-gray-300 mb-6"><strong>Description:</strong> {team.Description.String}</p>) : (
+                        <p className="text-gray-300 mb-6"><strong>Description:</strong> {null}</p>)
+                    }
+                    <p className="text-gray-300 mb-6"><strong>Owner ID:</strong> {team.OwnerID}</p>
+                    <p className="text-gray-300 mb-6"><strong>Created At:</strong> {team.CreatedAt}</p>
+                    <p className="text-gray-300 mb-6"><strong>Updated At:</strong> {team.UpdatedAt}</p>
                 </div>
             ))}
         </div>
     );
 };
 
-export default OneProjectPage;
+export default AllTeamsPage;

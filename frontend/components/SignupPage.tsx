@@ -33,7 +33,7 @@ const SignupPage: React.FC<SignupPageProps> = () => {
         const accessToken = xmlDoc.getElementsByTagName("access_token")[0].childNodes[0].nodeValue;
         localStorage.setItem('accessToken', String(accessToken));
 
-        router.push('/orgs/your_orgs');
+        router.push('http://localhost:3000/orgs/your_orgs');
     }
 
     return (

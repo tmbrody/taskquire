@@ -29,7 +29,7 @@ const UpdateProjectPage: React.FC<UpdateProjectPageProps> = () => {
             body: xmls,
         });
 
-        router.push(`/orgs/${orgName}/projects`)
+        router.push(`http://localhost:3000/orgs/${orgName}/projects`)
     }
 
     return (

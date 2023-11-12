@@ -25,17 +25,15 @@ const LoginPage: React.FC<LoginPageProps> = () => {
         });
 
         const data = await response.text();
-        console.log('Response data:', data);
 
         const parser = new DOMParser();
         const xmlDoc = parser.parseFromString(data,"text/xml");
 
         const accessToken = xmlDoc.getElementsByTagName("access_token")[0].childNodes[0].nodeValue;
-        console.log('Parsed access token:', accessToken);
 
         localStorage.setItem('accessToken', String(accessToken));
 
-        router.push('/orgs/your_orgs');
+        router.push('http://localhost:3000/');
     }
 
     return (

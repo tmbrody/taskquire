@@ -60,10 +60,16 @@ func SetupApiRoutes(r *gin.RouterGroup) {
 	r.POST("/orgs/:orgName/projects", handlers.CreateProjectHandler)
 	r.GET("/orgs/:orgName/projects", handlers.GetProjectsHandler)
 	r.GET("/orgs/:orgName/projects/:projectName", handlers.GetOneProjectHandler)
-	r.PUT("/orgs/:orgName/projects", handlers.AddTeamToProjectHandler)
 	r.PUT("/orgs/:orgName/projects/:projectName", handlers.UpdateProjectHandler)
-	r.DELETE("/orgs/:orgName/projects", handlers.RemoveTeamFromProjectHandler)
 	r.DELETE("/orgs/:orgName/projects/:projectName", handlers.DeleteProjectHandler)
+
+	r.GET("/orgs/:orgName/projects/:projectName/teams", handlers.GetTeamsFromProjectHandler)
+	r.PUT("/orgs/:orgName/projects/:projectName/teams", handlers.AddTeamToProjectHandler)
+	r.DELETE("/orgs/:orgName/projects/:projectName/teams", handlers.RemoveTeamFromProjectHandler)
+
+	r.GET("/orgs/:orgName/projects/:projectName/teams/:teamName", handlers.GetOneTeamHandler)
+	r.PUT("/orgs/:orgName/projects/:projectName/teams/:teamName", handlers.AddUserToTeamHandler)
+	r.DELETE("/orgs/:orgName/projects/:projectName/teams/:teamName", handlers.RemoveUserFromTeamHandler)
 
 	r.POST("/orgs/:orgName/projects/:projectName/teams/:teamName/tasks", handlers.CreateTaskHandler)
 	r.GET("/orgs/:orgName/projects/:projectName/teams/:teamName/tasks", handlers.GetTasksHandler)

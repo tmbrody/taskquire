@@ -1,5 +1,5 @@
-import AllOrgsPage from "../../components/GetYourOrgsPage";
+import YourOrgsPage from "../../components/Orgs/GetYourOrgsPage";
 
-export default function ViewOrgs() {
-    return <AllOrgsPage />;
+export default function ViewYourOrgs() {
+    return <YourOrgsPage />;
 };

@@ -373,10 +373,10 @@ func (s *ProjectsTeamsSqlSuite) TestQueriesAddTeamToProject17() {
 
 }
 
-func (s *ProjectsTeamsSqlSuite) TestQueriesGetAllProjectsByTeam0() {
+func (s *ProjectsTeamsSqlSuite) TestQueriesGetAllProjectsFromTeam0() {
 	defer func() {
 		if r := recover(); r != nil {
-			fmt.Println("Recovered in TestQueriesGetAllProjectsByTeam0", r)
+			fmt.Println("Recovered in TestQueriesGetAllProjectsFromTeam0", r)
 		}
 	}()
 
@@ -389,14 +389,14 @@ func (s *ProjectsTeamsSqlSuite) TestQueriesGetAllProjectsByTeam0() {
 	}()
 	teamID := "Dianna Schumm"
 
-	q.GetAllProjectsByTeam(ctx, teamID)
+	q.GetAllProjectsFromTeam(ctx, teamID)
 
 }
 
-func (s *ProjectsTeamsSqlSuite) TestQueriesGetAllProjectsByTeam1() {
+func (s *ProjectsTeamsSqlSuite) TestQueriesGetAllProjectsFromTeam1() {
 	defer func() {
 		if r := recover(); r != nil {
-			fmt.Println("Recovered in TestQueriesGetAllProjectsByTeam1", r)
+			fmt.Println("Recovered in TestQueriesGetAllProjectsFromTeam1", r)
 		}
 	}()
 
@@ -409,14 +409,14 @@ func (s *ProjectsTeamsSqlSuite) TestQueriesGetAllProjectsByTeam1() {
 	}()
 	teamID := "Federico Yundt"
 
-	q.GetAllProjectsByTeam(ctx, teamID)
+	q.GetAllProjectsFromTeam(ctx, teamID)
 
 }
 
-func (s *ProjectsTeamsSqlSuite) TestQueriesGetAllProjectsByTeam2() {
+func (s *ProjectsTeamsSqlSuite) TestQueriesGetAllProjectsFromTeam2() {
 	defer func() {
 		if r := recover(); r != nil {
-			fmt.Println("Recovered in TestQueriesGetAllProjectsByTeam2", r)
+			fmt.Println("Recovered in TestQueriesGetAllProjectsFromTeam2", r)
 		}
 	}()
 
@@ -429,14 +429,14 @@ func (s *ProjectsTeamsSqlSuite) TestQueriesGetAllProjectsByTeam2() {
 	}()
 	teamID := "Joanie Trantow"
 
-	q.GetAllProjectsByTeam(ctx, teamID)
+	q.GetAllProjectsFromTeam(ctx, teamID)
 
 }
 
-func (s *ProjectsTeamsSqlSuite) TestQueriesGetAllProjectsByTeam3() {
+func (s *ProjectsTeamsSqlSuite) TestQueriesGetAllProjectsFromTeam3() {
 	defer func() {
 		if r := recover(); r != nil {
-			fmt.Println("Recovered in TestQueriesGetAllProjectsByTeam3", r)
+			fmt.Println("Recovered in TestQueriesGetAllProjectsFromTeam3", r)
 		}
 	}()
 
@@ -449,14 +449,14 @@ func (s *ProjectsTeamsSqlSuite) TestQueriesGetAllProjectsByTeam3() {
 	}()
 	teamID := "Haylee Smith"
 
-	q.GetAllProjectsByTeam(ctx, teamID)
+	q.GetAllProjectsFromTeam(ctx, teamID)
 
 }
 
-func (s *ProjectsTeamsSqlSuite) TestQueriesGetAllProjectsByTeam4() {
+func (s *ProjectsTeamsSqlSuite) TestQueriesGetAllProjectsFromTeam4() {
 	defer func() {
 		if r := recover(); r != nil {
-			fmt.Println("Recovered in TestQueriesGetAllProjectsByTeam4", r)
+			fmt.Println("Recovered in TestQueriesGetAllProjectsFromTeam4", r)
 		}
 	}()
 
@@ -469,14 +469,14 @@ func (s *ProjectsTeamsSqlSuite) TestQueriesGetAllProjectsByTeam4() {
 	}()
 	teamID := "Terrill Homenick"
 
-	q.GetAllProjectsByTeam(ctx, teamID)
+	q.GetAllProjectsFromTeam(ctx, teamID)
 
 }
 
-func (s *ProjectsTeamsSqlSuite) TestQueriesGetAllProjectsByTeam5() {
+func (s *ProjectsTeamsSqlSuite) TestQueriesGetAllProjectsFromTeam5() {
 	defer func() {
 		if r := recover(); r != nil {
-			fmt.Println("Recovered in TestQueriesGetAllProjectsByTeam5", r)
+			fmt.Println("Recovered in TestQueriesGetAllProjectsFromTeam5", r)
 		}
 	}()
 
@@ -489,14 +489,14 @@ func (s *ProjectsTeamsSqlSuite) TestQueriesGetAllProjectsByTeam5() {
 	}()
 	teamID := "Miracle Boyle"
 
-	q.GetAllProjectsByTeam(ctx, teamID)
+	q.GetAllProjectsFromTeam(ctx, teamID)
 
 }
 
-func (s *ProjectsTeamsSqlSuite) TestQueriesGetAllProjectsByTeam6() {
+func (s *ProjectsTeamsSqlSuite) TestQueriesGetAllProjectsFromTeam6() {
 	defer func() {
 		if r := recover(); r != nil {
-			fmt.Println("Recovered in TestQueriesGetAllProjectsByTeam6", r)
+			fmt.Println("Recovered in TestQueriesGetAllProjectsFromTeam6", r)
 		}
 	}()
 
@@ -509,14 +509,14 @@ func (s *ProjectsTeamsSqlSuite) TestQueriesGetAllProjectsByTeam6() {
 	}()
 	teamID := "Grace Pfannerstill"
 
-	q.GetAllProjectsByTeam(ctx, teamID)
+	q.GetAllProjectsFromTeam(ctx, teamID)
 
 }
 
-func (s *ProjectsTeamsSqlSuite) TestQueriesGetAllProjectsByTeam7() {
+func (s *ProjectsTeamsSqlSuite) TestQueriesGetAllProjectsFromTeam7() {
 	defer func() {
 		if r := recover(); r != nil {
-			fmt.Println("Recovered in TestQueriesGetAllProjectsByTeam7", r)
+			fmt.Println("Recovered in TestQueriesGetAllProjectsFromTeam7", r)
 		}
 	}()
 
@@ -529,14 +529,14 @@ func (s *ProjectsTeamsSqlSuite) TestQueriesGetAllProjectsByTeam7() {
 	}()
 	teamID := "Bertram Lindgren"
 
-	q.GetAllProjectsByTeam(ctx, teamID)
+	q.GetAllProjectsFromTeam(ctx, teamID)
 
 }
 
-func (s *ProjectsTeamsSqlSuite) TestQueriesGetAllProjectsByTeam8() {
+func (s *ProjectsTeamsSqlSuite) TestQueriesGetAllProjectsFromTeam8() {
 	defer func() {
 		if r := recover(); r != nil {
-			fmt.Println("Recovered in TestQueriesGetAllProjectsByTeam8", r)
+			fmt.Println("Recovered in TestQueriesGetAllProjectsFromTeam8", r)
 		}
 	}()
 
@@ -549,14 +549,14 @@ func (s *ProjectsTeamsSqlSuite) TestQueriesGetAllProjectsByTeam8() {
 	}()
 	teamID := "Jermain Nikolaus"
 
-	q.GetAllProjectsByTeam(ctx, teamID)
+	q.GetAllProjectsFromTeam(ctx, teamID)
 
 }
 
-func (s *ProjectsTeamsSqlSuite) TestQueriesGetAllProjectsByTeam9() {
+func (s *ProjectsTeamsSqlSuite) TestQueriesGetAllProjectsFromTeam9() {
 	defer func() {
 		if r := recover(); r != nil {
-			fmt.Println("Recovered in TestQueriesGetAllProjectsByTeam9", r)
+			fmt.Println("Recovered in TestQueriesGetAllProjectsFromTeam9", r)
 		}
 	}()
 
@@ -569,14 +569,14 @@ func (s *ProjectsTeamsSqlSuite) TestQueriesGetAllProjectsByTeam9() {
 	}()
 	teamID := "Verlie Reilly"
 
-	q.GetAllProjectsByTeam(ctx, teamID)
+	q.GetAllProjectsFromTeam(ctx, teamID)
 
 }
 
-func (s *ProjectsTeamsSqlSuite) TestQueriesGetAllProjectsByTeam10() {
+func (s *ProjectsTeamsSqlSuite) TestQueriesGetAllProjectsFromTeam10() {
 	defer func() {
 		if r := recover(); r != nil {
-			fmt.Println("Recovered in TestQueriesGetAllProjectsByTeam10", r)
+			fmt.Println("Recovered in TestQueriesGetAllProjectsFromTeam10", r)
 		}
 	}()
 
@@ -589,14 +589,14 @@ func (s *ProjectsTeamsSqlSuite) TestQueriesGetAllProjectsByTeam10() {
 	}()
 	teamID := "Duncan Lakin"
 
-	q.GetAllProjectsByTeam(ctx, teamID)
+	q.GetAllProjectsFromTeam(ctx, teamID)
 
 }
 
-func (s *ProjectsTeamsSqlSuite) TestQueriesGetAllProjectsByTeam11() {
+func (s *ProjectsTeamsSqlSuite) TestQueriesGetAllProjectsFromTeam11() {
 	defer func() {
 		if r := recover(); r != nil {
-			fmt.Println("Recovered in TestQueriesGetAllProjectsByTeam11", r)
+			fmt.Println("Recovered in TestQueriesGetAllProjectsFromTeam11", r)
 		}
 	}()
 
@@ -609,14 +609,14 @@ func (s *ProjectsTeamsSqlSuite) TestQueriesGetAllProjectsByTeam11() {
 	}()
 	teamID := "Mariah Swift"
 
-	q.GetAllProjectsByTeam(ctx, teamID)
+	q.GetAllProjectsFromTeam(ctx, teamID)
 
 }
 
-func (s *ProjectsTeamsSqlSuite) TestQueriesGetAllProjectsByTeam12() {
+func (s *ProjectsTeamsSqlSuite) TestQueriesGetAllProjectsFromTeam12() {
 	defer func() {
 		if r := recover(); r != nil {
-			fmt.Println("Recovered in TestQueriesGetAllProjectsByTeam12", r)
+			fmt.Println("Recovered in TestQueriesGetAllProjectsFromTeam12", r)
 		}
 	}()
 
@@ -629,14 +629,14 @@ func (s *ProjectsTeamsSqlSuite) TestQueriesGetAllProjectsByTeam12() {
 	}()
 	teamID := "Noble McLaughlin"
 
-	q.GetAllProjectsByTeam(ctx, teamID)
+	q.GetAllProjectsFromTeam(ctx, teamID)
 
 }
 
-func (s *ProjectsTeamsSqlSuite) TestQueriesGetAllProjectsByTeam13() {
+func (s *ProjectsTeamsSqlSuite) TestQueriesGetAllProjectsFromTeam13() {
 	defer func() {
 		if r := recover(); r != nil {
-			fmt.Println("Recovered in TestQueriesGetAllProjectsByTeam13", r)
+			fmt.Println("Recovered in TestQueriesGetAllProjectsFromTeam13", r)
 		}
 	}()
 
@@ -649,14 +649,14 @@ func (s *ProjectsTeamsSqlSuite) TestQueriesGetAllProjectsByTeam13() {
 	}()
 	teamID := "Carlos Fritsch"
 
-	q.GetAllProjectsByTeam(ctx, teamID)
+	q.GetAllProjectsFromTeam(ctx, teamID)
 
 }
 
-func (s *ProjectsTeamsSqlSuite) TestQueriesGetAllProjectsByTeam14() {
+func (s *ProjectsTeamsSqlSuite) TestQueriesGetAllProjectsFromTeam14() {
 	defer func() {
 		if r := recover(); r != nil {
-			fmt.Println("Recovered in TestQueriesGetAllProjectsByTeam14", r)
+			fmt.Println("Recovered in TestQueriesGetAllProjectsFromTeam14", r)
 		}
 	}()
 
@@ -669,14 +669,14 @@ func (s *ProjectsTeamsSqlSuite) TestQueriesGetAllProjectsByTeam14() {
 	}()
 	teamID := "Nasir Marks"
 
-	q.GetAllProjectsByTeam(ctx, teamID)
+	q.GetAllProjectsFromTeam(ctx, teamID)
 
 }
 
-func (s *ProjectsTeamsSqlSuite) TestQueriesGetAllProjectsByTeam15() {
+func (s *ProjectsTeamsSqlSuite) TestQueriesGetAllProjectsFromTeam15() {
 	defer func() {
 		if r := recover(); r != nil {
-			fmt.Println("Recovered in TestQueriesGetAllProjectsByTeam15", r)
+			fmt.Println("Recovered in TestQueriesGetAllProjectsFromTeam15", r)
 		}
 	}()
 
@@ -689,14 +689,14 @@ func (s *ProjectsTeamsSqlSuite) TestQueriesGetAllProjectsByTeam15() {
 	}()
 	teamID := "Cody Wilderman"
 
-	q.GetAllProjectsByTeam(ctx, teamID)
+	q.GetAllProjectsFromTeam(ctx, teamID)
 
 }
 
-func (s *ProjectsTeamsSqlSuite) TestQueriesGetAllProjectsByTeam16() {
+func (s *ProjectsTeamsSqlSuite) TestQueriesGetAllProjectsFromTeam16() {
 	defer func() {
 		if r := recover(); r != nil {
-			fmt.Println("Recovered in TestQueriesGetAllProjectsByTeam16", r)
+			fmt.Println("Recovered in TestQueriesGetAllProjectsFromTeam16", r)
 		}
 	}()
 
@@ -709,14 +709,14 @@ func (s *ProjectsTeamsSqlSuite) TestQueriesGetAllProjectsByTeam16() {
 	}()
 	teamID := "Libbie Stark"
 
-	q.GetAllProjectsByTeam(ctx, teamID)
+	q.GetAllProjectsFromTeam(ctx, teamID)
 
 }
 
-func (s *ProjectsTeamsSqlSuite) TestQueriesGetAllProjectsByTeam17() {
+func (s *ProjectsTeamsSqlSuite) TestQueriesGetAllProjectsFromTeam17() {
 	defer func() {
 		if r := recover(); r != nil {
-			fmt.Println("Recovered in TestQueriesGetAllProjectsByTeam17", r)
+			fmt.Println("Recovered in TestQueriesGetAllProjectsFromTeam17", r)
 		}
 	}()
 
@@ -729,7 +729,7 @@ func (s *ProjectsTeamsSqlSuite) TestQueriesGetAllProjectsByTeam17() {
 	}()
 	teamID := "Johnnie Ledner"
 
-	q.GetAllProjectsByTeam(ctx, teamID)
+	q.GetAllProjectsFromTeam(ctx, teamID)
 
 }
 
@@ -1453,10 +1453,10 @@ func (s *ProjectsTeamsSqlSuite) TestQueriesGetOneProjectFromTeam17() {
 
 }
 
-func (s *ProjectsTeamsSqlSuite) TestQueriesRemoveProjectFromTeam0() {
+func (s *ProjectsTeamsSqlSuite) TestQueriesRemoveTeamFromProject0() {
 	defer func() {
 		if r := recover(); r != nil {
-			fmt.Println("Recovered in TestQueriesRemoveProjectFromTeam0", r)
+			fmt.Println("Recovered in TestQueriesRemoveTeamFromProject0", r)
 		}
 	}()
 
@@ -1467,16 +1467,16 @@ func (s *ProjectsTeamsSqlSuite) TestQueriesRemoveProjectFromTeam0() {
 	ctx := func() context.Context {
 		return nil
 	}()
-	arg := RemoveProjectFromTeamParams{ProjectID: "Ethan Hand", TeamID: "Jude Hegmann"}
+	arg := RemoveTeamFromProjectParams{ProjectID: "Ethan Hand", TeamID: "Jude Hegmann"}
 
-	q.RemoveProjectFromTeam(ctx, arg)
+	q.RemoveTeamFromProject(ctx, arg)
 
 }
 
-func (s *ProjectsTeamsSqlSuite) TestQueriesRemoveProjectFromTeam1() {
+func (s *ProjectsTeamsSqlSuite) TestQueriesRemoveTeamFromProject1() {
 	defer func() {
 		if r := recover(); r != nil {
-			fmt.Println("Recovered in TestQueriesRemoveProjectFromTeam1", r)
+			fmt.Println("Recovered in TestQueriesRemoveTeamFromProject1", r)
 		}
 	}()
 
@@ -1487,16 +1487,16 @@ func (s *ProjectsTeamsSqlSuite) TestQueriesRemoveProjectFromTeam1() {
 	ctx := func() context.Context {
 		return nil
 	}()
-	arg := RemoveProjectFromTeamParams{ProjectID: "Jace Kuhic", TeamID: "Chadd Shanahan"}
+	arg := RemoveTeamFromProjectParams{ProjectID: "Jace Kuhic", TeamID: "Chadd Shanahan"}
 
-	q.RemoveProjectFromTeam(ctx, arg)
+	q.RemoveTeamFromProject(ctx, arg)
 
 }
 
-func (s *ProjectsTeamsSqlSuite) TestQueriesRemoveProjectFromTeam2() {
+func (s *ProjectsTeamsSqlSuite) TestQueriesRemoveTeamFromProject2() {
 	defer func() {
 		if r := recover(); r != nil {
-			fmt.Println("Recovered in TestQueriesRemoveProjectFromTeam2", r)
+			fmt.Println("Recovered in TestQueriesRemoveTeamFromProject2", r)
 		}
 	}()
 
@@ -1507,16 +1507,16 @@ func (s *ProjectsTeamsSqlSuite) TestQueriesRemoveProjectFromTeam2() {
 	ctx := func() context.Context {
 		return nil
 	}()
-	arg := RemoveProjectFromTeamParams{ProjectID: "Theo Lesch", TeamID: "Gretchen Prohaska"}
+	arg := RemoveTeamFromProjectParams{ProjectID: "Theo Lesch", TeamID: "Gretchen Prohaska"}
 
-	q.RemoveProjectFromTeam(ctx, arg)
+	q.RemoveTeamFromProject(ctx, arg)
 
 }
 
-func (s *ProjectsTeamsSqlSuite) TestQueriesRemoveProjectFromTeam3() {
+func (s *ProjectsTeamsSqlSuite) TestQueriesRemoveTeamFromProject3() {
 	defer func() {
 		if r := recover(); r != nil {
-			fmt.Println("Recovered in TestQueriesRemoveProjectFromTeam3", r)
+			fmt.Println("Recovered in TestQueriesRemoveTeamFromProject3", r)
 		}
 	}()
 
@@ -1527,16 +1527,16 @@ func (s *ProjectsTeamsSqlSuite) TestQueriesRemoveProjectFromTeam3() {
 	ctx := func() context.Context {
 		return nil
 	}()
-	arg := RemoveProjectFromTeamParams{ProjectID: "Brielle Bechtelar", TeamID: "Scottie Goyette"}
+	arg := RemoveTeamFromProjectParams{ProjectID: "Brielle Bechtelar", TeamID: "Scottie Goyette"}
 
-	q.RemoveProjectFromTeam(ctx, arg)
+	q.RemoveTeamFromProject(ctx, arg)
 
 }
 
-func (s *ProjectsTeamsSqlSuite) TestQueriesRemoveProjectFromTeam4() {
+func (s *ProjectsTeamsSqlSuite) TestQueriesRemoveTeamFromProject4() {
 	defer func() {
 		if r := recover(); r != nil {
-			fmt.Println("Recovered in TestQueriesRemoveProjectFromTeam4", r)
+			fmt.Println("Recovered in TestQueriesRemoveTeamFromProject4", r)
 		}
 	}()
 
@@ -1547,16 +1547,16 @@ func (s *ProjectsTeamsSqlSuite) TestQueriesRemoveProjectFromTeam4() {
 	ctx := func() context.Context {
 		return nil
 	}()
-	arg := RemoveProjectFromTeamParams{ProjectID: "Cortney Russel", TeamID: "Deja Dickens"}
+	arg := RemoveTeamFromProjectParams{ProjectID: "Cortney Russel", TeamID: "Deja Dickens"}
 
-	q.RemoveProjectFromTeam(ctx, arg)
+	q.RemoveTeamFromProject(ctx, arg)
 
 }
 
-func (s *ProjectsTeamsSqlSuite) TestQueriesRemoveProjectFromTeam5() {
+func (s *ProjectsTeamsSqlSuite) TestQueriesRemoveTeamFromProject5() {
 	defer func() {
 		if r := recover(); r != nil {
-			fmt.Println("Recovered in TestQueriesRemoveProjectFromTeam5", r)
+			fmt.Println("Recovered in TestQueriesRemoveTeamFromProject5", r)
 		}
 	}()
 
@@ -1567,16 +1567,16 @@ func (s *ProjectsTeamsSqlSuite) TestQueriesRemoveProjectFromTeam5() {
 	ctx := func() context.Context {
 		return nil
 	}()
-	arg := RemoveProjectFromTeamParams{ProjectID: "Clemens Cassin", TeamID: "Lowell Nolan"}
+	arg := RemoveTeamFromProjectParams{ProjectID: "Clemens Cassin", TeamID: "Lowell Nolan"}
 
-	q.RemoveProjectFromTeam(ctx, arg)
+	q.RemoveTeamFromProject(ctx, arg)
 
 }
 
-func (s *ProjectsTeamsSqlSuite) TestQueriesRemoveProjectFromTeam6() {
+func (s *ProjectsTeamsSqlSuite) TestQueriesRemoveTeamFromProject6() {
 	defer func() {
 		if r := recover(); r != nil {
-			fmt.Println("Recovered in TestQueriesRemoveProjectFromTeam6", r)
+			fmt.Println("Recovered in TestQueriesRemoveTeamFromProject6", r)
 		}
 	}()
 
@@ -1587,16 +1587,16 @@ func (s *ProjectsTeamsSqlSuite) TestQueriesRemoveProjectFromTeam6() {
 	ctx := func() context.Context {
 		return nil
 	}()
-	arg := RemoveProjectFromTeamParams{ProjectID: "Izabella Kuhn", TeamID: "Candelario Kessler"}
+	arg := RemoveTeamFromProjectParams{ProjectID: "Izabella Kuhn", TeamID: "Candelario Kessler"}
 
-	q.RemoveProjectFromTeam(ctx, arg)
+	q.RemoveTeamFromProject(ctx, arg)
 
 }
 
-func (s *ProjectsTeamsSqlSuite) TestQueriesRemoveProjectFromTeam7() {
+func (s *ProjectsTeamsSqlSuite) TestQueriesRemoveTeamFromProject7() {
 	defer func() {
 		if r := recover(); r != nil {
-			fmt.Println("Recovered in TestQueriesRemoveProjectFromTeam7", r)
+			fmt.Println("Recovered in TestQueriesRemoveTeamFromProject7", r)
 		}
 	}()
 
@@ -1607,16 +1607,16 @@ func (s *ProjectsTeamsSqlSuite) TestQueriesRemoveProjectFromTeam7() {
 	ctx := func() context.Context {
 		return nil
 	}()
-	arg := RemoveProjectFromTeamParams{ProjectID: "Hilario Goldner", TeamID: "Sonny Conn"}
+	arg := RemoveTeamFromProjectParams{ProjectID: "Hilario Goldner", TeamID: "Sonny Conn"}
 
-	q.RemoveProjectFromTeam(ctx, arg)
+	q.RemoveTeamFromProject(ctx, arg)
 
 }
 
-func (s *ProjectsTeamsSqlSuite) TestQueriesRemoveProjectFromTeam8() {
+func (s *ProjectsTeamsSqlSuite) TestQueriesRemoveTeamFromProject8() {
 	defer func() {
 		if r := recover(); r != nil {
-			fmt.Println("Recovered in TestQueriesRemoveProjectFromTeam8", r)
+			fmt.Println("Recovered in TestQueriesRemoveTeamFromProject8", r)
 		}
 	}()
 
@@ -1627,16 +1627,16 @@ func (s *ProjectsTeamsSqlSuite) TestQueriesRemoveProjectFromTeam8() {
 	ctx := func() context.Context {
 		return nil
 	}()
-	arg := RemoveProjectFromTeamParams{ProjectID: "Devin Zboncak", TeamID: "Erick Beier"}
+	arg := RemoveTeamFromProjectParams{ProjectID: "Devin Zboncak", TeamID: "Erick Beier"}
 
-	q.RemoveProjectFromTeam(ctx, arg)
+	q.RemoveTeamFromProject(ctx, arg)
 
 }
 
-func (s *ProjectsTeamsSqlSuite) TestQueriesRemoveProjectFromTeam9() {
+func (s *ProjectsTeamsSqlSuite) TestQueriesRemoveTeamFromProject9() {
 	defer func() {
 		if r := recover(); r != nil {
-			fmt.Println("Recovered in TestQueriesRemoveProjectFromTeam9", r)
+			fmt.Println("Recovered in TestQueriesRemoveTeamFromProject9", r)
 		}
 	}()
 
@@ -1647,16 +1647,16 @@ func (s *ProjectsTeamsSqlSuite) TestQueriesRemoveProjectFromTeam9() {
 	ctx := func() context.Context {
 		return nil
 	}()
-	arg := RemoveProjectFromTeamParams{ProjectID: "Vance Buckridge", TeamID: "Angeline Sawayn"}
+	arg := RemoveTeamFromProjectParams{ProjectID: "Vance Buckridge", TeamID: "Angeline Sawayn"}
 
-	q.RemoveProjectFromTeam(ctx, arg)
+	q.RemoveTeamFromProject(ctx, arg)
 
 }
 
-func (s *ProjectsTeamsSqlSuite) TestQueriesRemoveProjectFromTeam10() {
+func (s *ProjectsTeamsSqlSuite) TestQueriesRemoveTeamFromProject10() {
 	defer func() {
 		if r := recover(); r != nil {
-			fmt.Println("Recovered in TestQueriesRemoveProjectFromTeam10", r)
+			fmt.Println("Recovered in TestQueriesRemoveTeamFromProject10", r)
 		}
 	}()
 
@@ -1667,16 +1667,16 @@ func (s *ProjectsTeamsSqlSuite) TestQueriesRemoveProjectFromTeam10() {
 	ctx := func() context.Context {
 		return nil
 	}()
-	arg := RemoveProjectFromTeamParams{ProjectID: "Lelah Upton", TeamID: "Maddison Carter"}
+	arg := RemoveTeamFromProjectParams{ProjectID: "Lelah Upton", TeamID: "Maddison Carter"}
 
-	q.RemoveProjectFromTeam(ctx, arg)
+	q.RemoveTeamFromProject(ctx, arg)
 
 }
 
-func (s *ProjectsTeamsSqlSuite) TestQueriesRemoveProjectFromTeam11() {
+func (s *ProjectsTeamsSqlSuite) TestQueriesRemoveTeamFromProject11() {
 	defer func() {
 		if r := recover(); r != nil {
-			fmt.Println("Recovered in TestQueriesRemoveProjectFromTeam11", r)
+			fmt.Println("Recovered in TestQueriesRemoveTeamFromProject11", r)
 		}
 	}()
 
@@ -1687,16 +1687,16 @@ func (s *ProjectsTeamsSqlSuite) TestQueriesRemoveProjectFromTeam11() {
 	ctx := func() context.Context {
 		return nil
 	}()
-	arg := RemoveProjectFromTeamParams{ProjectID: "Mckenzie Spencer", TeamID: "Miller Lubowitz"}
+	arg := RemoveTeamFromProjectParams{ProjectID: "Mckenzie Spencer", TeamID: "Miller Lubowitz"}
 
-	q.RemoveProjectFromTeam(ctx, arg)
+	q.RemoveTeamFromProject(ctx, arg)
 
 }
 
-func (s *ProjectsTeamsSqlSuite) TestQueriesRemoveProjectFromTeam12() {
+func (s *ProjectsTeamsSqlSuite) TestQueriesRemoveTeamFromProject12() {
 	defer func() {
 		if r := recover(); r != nil {
-			fmt.Println("Recovered in TestQueriesRemoveProjectFromTeam12", r)
+			fmt.Println("Recovered in TestQueriesRemoveTeamFromProject12", r)
 		}
 	}()
 
@@ -1707,16 +1707,16 @@ func (s *ProjectsTeamsSqlSuite) TestQueriesRemoveProjectFromTeam12() {
 	ctx := func() context.Context {
 		return nil
 	}()
-	arg := RemoveProjectFromTeamParams{ProjectID: "Saige Cartwright", TeamID: "Seamus Turcotte"}
+	arg := RemoveTeamFromProjectParams{ProjectID: "Saige Cartwright", TeamID: "Seamus Turcotte"}
 
-	q.RemoveProjectFromTeam(ctx, arg)
+	q.RemoveTeamFromProject(ctx, arg)
 
 }
 
-func (s *ProjectsTeamsSqlSuite) TestQueriesRemoveProjectFromTeam13() {
+func (s *ProjectsTeamsSqlSuite) TestQueriesRemoveTeamFromProject13() {
 	defer func() {
 		if r := recover(); r != nil {
-			fmt.Println("Recovered in TestQueriesRemoveProjectFromTeam13", r)
+			fmt.Println("Recovered in TestQueriesRemoveTeamFromProject13", r)
 		}
 	}()
 
@@ -1727,16 +1727,16 @@ func (s *ProjectsTeamsSqlSuite) TestQueriesRemoveProjectFromTeam13() {
 	ctx := func() context.Context {
 		return nil
 	}()
-	arg := RemoveProjectFromTeamParams{ProjectID: "Monserrat Ledner", TeamID: "Nelson Denesik"}
+	arg := RemoveTeamFromProjectParams{ProjectID: "Monserrat Ledner", TeamID: "Nelson Denesik"}
 
-	q.RemoveProjectFromTeam(ctx, arg)
+	q.RemoveTeamFromProject(ctx, arg)
 
 }
 
-func (s *ProjectsTeamsSqlSuite) TestQueriesRemoveProjectFromTeam14() {
+func (s *ProjectsTeamsSqlSuite) TestQueriesRemoveTeamFromProject14() {
 	defer func() {
 		if r := recover(); r != nil {
-			fmt.Println("Recovered in TestQueriesRemoveProjectFromTeam14", r)
+			fmt.Println("Recovered in TestQueriesRemoveTeamFromProject14", r)
 		}
 	}()
 
@@ -1747,16 +1747,16 @@ func (s *ProjectsTeamsSqlSuite) TestQueriesRemoveProjectFromTeam14() {
 	ctx := func() context.Context {
 		return nil
 	}()
-	arg := RemoveProjectFromTeamParams{ProjectID: "Piper Rodriguez", TeamID: "Kelley Quigley"}
+	arg := RemoveTeamFromProjectParams{ProjectID: "Piper Rodriguez", TeamID: "Kelley Quigley"}
 
-	q.RemoveProjectFromTeam(ctx, arg)
+	q.RemoveTeamFromProject(ctx, arg)
 
 }
 
-func (s *ProjectsTeamsSqlSuite) TestQueriesRemoveProjectFromTeam15() {
+func (s *ProjectsTeamsSqlSuite) TestQueriesRemoveTeamFromProject15() {
 	defer func() {
 		if r := recover(); r != nil {
-			fmt.Println("Recovered in TestQueriesRemoveProjectFromTeam15", r)
+			fmt.Println("Recovered in TestQueriesRemoveTeamFromProject15", r)
 		}
 	}()
 
@@ -1767,16 +1767,16 @@ func (s *ProjectsTeamsSqlSuite) TestQueriesRemoveProjectFromTeam15() {
 	ctx := func() context.Context {
 		return nil
 	}()
-	arg := RemoveProjectFromTeamParams{ProjectID: "Linda Macejkovic", TeamID: "Annette Hermiston"}
+	arg := RemoveTeamFromProjectParams{ProjectID: "Linda Macejkovic", TeamID: "Annette Hermiston"}
 
-	q.RemoveProjectFromTeam(ctx, arg)
+	q.RemoveTeamFromProject(ctx, arg)
 
 }
 
-func (s *ProjectsTeamsSqlSuite) TestQueriesRemoveProjectFromTeam16() {
+func (s *ProjectsTeamsSqlSuite) TestQueriesRemoveTeamFromProject16() {
 	defer func() {
 		if r := recover(); r != nil {
-			fmt.Println("Recovered in TestQueriesRemoveProjectFromTeam16", r)
+			fmt.Println("Recovered in TestQueriesRemoveTeamFromProject16", r)
 		}
 	}()
 
@@ -1787,16 +1787,16 @@ func (s *ProjectsTeamsSqlSuite) TestQueriesRemoveProjectFromTeam16() {
 	ctx := func() context.Context {
 		return nil
 	}()
-	arg := RemoveProjectFromTeamParams{ProjectID: "Kali Goyette", TeamID: "Rudolph Cremin"}
+	arg := RemoveTeamFromProjectParams{ProjectID: "Kali Goyette", TeamID: "Rudolph Cremin"}
 
-	q.RemoveProjectFromTeam(ctx, arg)
+	q.RemoveTeamFromProject(ctx, arg)
 
 }
 
-func (s *ProjectsTeamsSqlSuite) TestQueriesRemoveProjectFromTeam17() {
+func (s *ProjectsTeamsSqlSuite) TestQueriesRemoveTeamFromProject17() {
 	defer func() {
 		if r := recover(); r != nil {
-			fmt.Println("Recovered in TestQueriesRemoveProjectFromTeam17", r)
+			fmt.Println("Recovered in TestQueriesRemoveTeamFromProject17", r)
 		}
 	}()
 
@@ -1807,9 +1807,9 @@ func (s *ProjectsTeamsSqlSuite) TestQueriesRemoveProjectFromTeam17() {
 	ctx := func() context.Context {
 		return nil
 	}()
-	arg := RemoveProjectFromTeamParams{ProjectID: "Stephen Stamm", TeamID: "Mateo Yost"}
+	arg := RemoveTeamFromProjectParams{ProjectID: "Stephen Stamm", TeamID: "Mateo Yost"}
 
-	q.RemoveProjectFromTeam(ctx, arg)
+	q.RemoveTeamFromProject(ctx, arg)
 
 }
 

@@ -24,13 +24,13 @@ func (q *Queries) AddTeamToProject(ctx context.Context, arg AddTeamToProjectPara
 	return q.db.ExecContext(ctx, addTeamToProject, arg.ProjectID, arg.TeamID)
 }
 
-const getAllProjectsByTeam = `-- name: GetAllProjectsByTeam :many
+const getAllProjectsFromTeam = `-- name: GetAllProjectsFromTeam :many
 SELECT project_id, team_id FROM projects_teams
 WHERE team_id = ?
 `
 
-func (q *Queries) GetAllProjectsByTeam(ctx context.Context, teamID string) ([]ProjectsTeam, error) {
-	rows, err := q.db.QueryContext(ctx, getAllProjectsByTeam, teamID)
+func (q *Queries) GetAllProjectsFromTeam(ctx context.Context, teamID string) ([]ProjectsTeam, error) {
+	rows, err := q.db.QueryContext(ctx, getAllProjectsFromTeam, teamID)
 	if err != nil {
 		return nil, err
 	}
@@ -98,17 +98,17 @@ func (q *Queries) GetOneProjectFromTeam(ctx context.Context, arg GetOneProjectFr
 	return i, err
 }
 
-const removeProjectFromTeam = `-- name: RemoveProjectFromTeam :execresult
+const removeTeamFromProject = `-- name: RemoveTeamFromProject :execresult
 DELETE FROM projects_teams
-WHERE project_id = ?
-AND team_id = ?
+WHERE team_id = ?
+AND project_id = ?
 `
 
-type RemoveProjectFromTeamParams struct {
-	ProjectID string
+type RemoveTeamFromProjectParams struct {
 	TeamID    string
+	ProjectID string
 }
 
-func (q *Queries) RemoveProjectFromTeam(ctx context.Context, arg RemoveProjectFromTeamParams) (sql.Result, error) {
-	return q.db.ExecContext(ctx, removeProjectFromTeam, arg.ProjectID, arg.TeamID)
+func (q *Queries) RemoveTeamFromProject(ctx context.Context, arg RemoveTeamFromProjectParams) (sql.Result, error) {
+	return q.db.ExecContext(ctx, removeTeamFromProject, arg.TeamID, arg.ProjectID)
 }

@@ -28,7 +28,7 @@ const HomePage: React.FC<HomePageProps> = () => {
                     </Link>
                 </div>
               </div>
-            <div className="bg-gray-800 p-8 rounded-lg shadow-md w-80">
+            <div className="bg-gray-800 p-8 rounded-lg shadow-md">
                 <h1 className="text-white text-3xl font-bold mb-4">Welcome to Taskquire</h1>
                 <p className="text-gray-300 mb-6">Your task management solution</p>
                 <Link href="/orgs/all_orgs" passHref>
@@ -39,6 +39,16 @@ const HomePage: React.FC<HomePageProps> = () => {
                 <Link href="/orgs/your_orgs" passHref>
                     <button className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-full hover:shadow-lg">
                         View Your Orgs
+                    </button>
+                </Link>
+                <Link href="/teams/all_teams" passHref>
+                    <button className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-full hover:shadow-lg">
+                        View All Teams
+                    </button>
+                </Link>
+                <Link href="/teams/your_teams" passHref>
+                    <button className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-full hover:shadow-lg">
+                        View Your Teams
                     </button>
                 </Link>
             </div>

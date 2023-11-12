@@ -3,21 +3,23 @@ import { useRouter } from 'next/router';
 import Link from 'next/link';
 import Image from 'next/image';
 
-interface PostOrgPageProps {}
+interface UpdateTaskPageProps {}
 
-const PostOrgPage: React.FC<PostOrgPageProps> = () => {
+const UpdateTaskPage: React.FC<UpdateTaskPageProps> = () => {
     const router = useRouter();
 
-    const [name, setName] = useState('');
-    const [description, setDescription] = useState('');
+    const { orgName, projectName, teamName, taskName, taskDescription } = router.query;
 
-    const handlePostOrg = async (event: React.FormEvent) => {
+    const [name, setName] = useState(taskName || '');
+    const [description, setDescription] = useState(taskDescription || '');
+
+    const handleUpdateTask = async (event: React.FormEvent) => {
         event.preventDefault();
 
-        const xmls = `<Org><Name>${name}</Name><Description>${description}</Description></Org>`
+        const xmls = `<Task><Name>${name}</Name><Description>${description}</Description></Task>`
 
-        const response = await fetch('http://localhost:8080/api/orgs', {
-            method: 'POST',
+        const response = await fetch(`http://localhost:8080/api/orgs/${orgName}/projects/${projectName}/teams/${teamName}/tasks/${taskName}`, {
+            method: 'PUT',
             headers: {
                 'Content-Type': 'application/xml',
                 'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
@@ -25,10 +27,7 @@ const PostOrgPage: React.FC<PostOrgPageProps> = () => {
             body: xmls,
         });
 
-        // const data = await response.text();
-        // console.log(data)
-
-        router.push('/orgs/your_orgs')
+        router.push(`http://localhost:3000/orgs/${orgName}/projects/${projectName}/teams/${teamName}/tasks`)
     }
 
     return (
@@ -58,7 +57,7 @@ const PostOrgPage: React.FC<PostOrgPageProps> = () => {
             <div className="bg-gray-800 p-8 rounded-lg shadow-md w-80">
                 <h1 className="text-white text-3xl font-bold mb-4">Welcome to Taskquire</h1>
                 <p className="text-gray-300 mb-6">Your task management solution</p>
-                <form onSubmit={handlePostOrg}>
+                <form onSubmit={handleUpdateTask}>
                     <input
                         className="mb-4 w-full px-3 py-2 border border-gray-300 rounded-md" 
                         type="text" 
@@ -77,7 +76,7 @@ const PostOrgPage: React.FC<PostOrgPageProps> = () => {
                         className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-full hover:shadow-lg w-full" 
                         type="submit"
                     >
-                        Create Org
+                        Update Task
                     </button>
                 </form>
             </div>
@@ -85,4 +84,4 @@ const PostOrgPage: React.FC<PostOrgPageProps> = () => {
     );
 };
 
-export default PostOrgPage;
+export default UpdateTaskPage;

@@ -5,5 +5,5 @@ export default function Logout() {
 
     localStorage.setItem('accessToken', "");
 
-    router.push('/');
+    router.push('http://localhost:3000/');
 };
