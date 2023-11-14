@@ -304,14 +304,20 @@ func GetTaskByParamName(c *gin.Context) (database.Task, *database.Queries) {
 	}
 
 	// Get the task name parameter
-	taskNameParam := c.Param("taskName")
+	taskNameParam := c.Param("subtaskName")
 
 	// Check if the task name is missing
 	if taskNameParam == "" {
-		c.XML(http.StatusBadRequest, config.ErrorResponse{
-			Message: "Task name is missing",
-		})
-		return database.Task{}, nil
+		// Get the task name parameter
+		taskNameParam = c.Param("taskName")
+
+		// Check if the task name is missing
+		if taskNameParam == "" {
+			c.XML(http.StatusBadRequest, config.ErrorResponse{
+				Message: "Task name is missing",
+			})
+			return database.Task{}, nil
+		}
 	}
 
 	// Retrieve the task by name

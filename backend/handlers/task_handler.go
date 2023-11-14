@@ -135,7 +135,7 @@ func GetTasksHandler(c *gin.Context) {
 	}
 
 	// Retrieve tasks for the project from the database.
-	tasks, err := db.GetTasksByProjectID(c, project.ID)
+	allTasks, err := db.GetTasksByProjectID(c, project.ID)
 	if err != nil {
 		c.XML(http.StatusInternalServerError, config.ErrorResponse{
 			Message: "Unable to get tasks",
@@ -143,9 +143,39 @@ func GetTasksHandler(c *gin.Context) {
 		return
 	}
 
+	tasks := []database.Task{}
+	for _, allTasks := range allTasks {
+		// Select tasks that have no parent task.
+		if allTasks.ParentID == "" {
+			tasks = append(tasks, allTasks)
+		}
+	}
+
 	// Create a slice to hold task information.
 	var taskMap []gin.H
 	for _, task := range tasks {
+		// Fetch subtasks for the task from the database.
+		subtasks, err := db.GetSubtasksByParentID(c, task.ID)
+		if err != nil {
+			c.XML(http.StatusInternalServerError, config.ErrorResponse{
+				Message: "Unable to get subtasks",
+			})
+			return
+		}
+
+		// Create a slice to hold subtask names.
+		var subtaskNames []string
+		for _, subtask := range subtasks {
+			subtaskNames = append(subtaskNames, subtask.Name)
+		}
+
+		if subtaskNames == nil {
+			subtaskNames = append(subtaskNames, "None")
+		}
+
+		// Create a TaskList structure for subtask names.
+		subtaskList := TaskList{Tasks: subtaskNames}
+
 		taskMap = append(taskMap, gin.H{
 			"ID":          task.ID,
 			"Name":        task.Name,
@@ -156,6 +186,109 @@ func GetTasksHandler(c *gin.Context) {
 			"TeamID":      task.TeamID,
 			"OwnerID":     task.OwnerID,
 			"ParentID":    task.ParentID,
+			"Subtasks":    subtaskList,
+		})
+	}
+
+	xmlData, err := xml.Marshal(gin.H{"Tasks": taskMap})
+	if err != nil {
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to marshal XML data",
+		})
+		return
+	}
+
+	xmlString, err := ConvertToCustomXML(xmlData, "task")
+	if err != nil {
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to convert XML data to custom format",
+		})
+		return
+	}
+
+	c.Data(http.StatusOK, "application/xml", []byte(xmlString))
+}
+
+// GetTasksHandler is a HTTP request handler for fetching tasks of a project.
+func GetSubtasksHandler(c *gin.Context) {
+
+	// Verify team membership and get project, team, and database.
+	project, team, db, _ := VerifyTeamMembershipAndGetProject(c)
+
+	// If team name is empty, return.
+	if team.Name == "" {
+		return
+	}
+
+	// Retrieve tasks for the project from the database.
+	allTasks, err := db.GetTasksByProjectID(c, project.ID)
+	if err != nil {
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to get tasks",
+		})
+		return
+	}
+
+	taskNameParam := c.Param("taskName")
+	if taskNameParam == "" {
+		c.XML(http.StatusBadRequest, config.ErrorResponse{
+			Message: "Task name is missing",
+		})
+		return
+	}
+
+	parentTask, err := db.GetTaskByName(c, taskNameParam)
+	if err != nil {
+		c.XML(http.StatusBadRequest, config.ErrorResponse{
+			Message: "Parent task does not exist",
+		})
+		return
+	}
+
+	tasks := []database.Task{}
+	for _, allTasks := range allTasks {
+		// Select tasks that have no parent task.
+		if allTasks.ParentID == parentTask.ID {
+			tasks = append(tasks, allTasks)
+		}
+	}
+
+	// Create a slice to hold task information.
+	var taskMap []gin.H
+	for _, task := range tasks {
+		// Fetch subtasks for the task from the database.
+		subtasks, err := db.GetSubtasksByParentID(c, task.ID)
+		if err != nil {
+			c.XML(http.StatusInternalServerError, config.ErrorResponse{
+				Message: "Unable to get subtasks",
+			})
+			return
+		}
+
+		// Create a slice to hold subtask names.
+		var subtaskNames []string
+		for _, subtask := range subtasks {
+			subtaskNames = append(subtaskNames, subtask.Name)
+		}
+
+		if subtaskNames == nil {
+			subtaskNames = append(subtaskNames, "None")
+		}
+
+		// Create a TaskList structure for subtask names.
+		subtaskList := TaskList{Tasks: subtaskNames}
+
+		taskMap = append(taskMap, gin.H{
+			"ID":          task.ID,
+			"Name":        task.Name,
+			"Description": task.Description,
+			"CreatedAt":   task.CreatedAt,
+			"UpdatedAt":   task.UpdatedAt,
+			"ProjectID":   task.ProjectID,
+			"TeamID":      task.TeamID,
+			"OwnerID":     task.OwnerID,
+			"ParentID":    task.ParentID,
+			"Subtasks":    subtaskList,
 		})
 	}
 
@@ -234,6 +367,7 @@ func GetOneTaskHandler(c *gin.Context) {
 		"ID":          task.ID,
 		"Name":        task.Name,
 		"Description": task.Description,
+		"OwnerID":     task.OwnerID,
 		"ProjectID":   task.ProjectID,
 		"TeamID":      task.TeamID,
 		"CreatedAt":   task.CreatedAt,
@@ -242,8 +376,23 @@ func GetOneTaskHandler(c *gin.Context) {
 		"Subtasks":    subtaskList,
 	})
 
-	// Respond with the task details.
-	c.XML(http.StatusOK, taskMap)
+	xmlData, err := xml.Marshal(gin.H{"Tasks": taskMap})
+	if err != nil {
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to marshal XML data",
+		})
+		return
+	}
+
+	xmlString, err := ConvertToCustomXML(xmlData, "task")
+	if err != nil {
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to convert XML data to custom format",
+		})
+		return
+	}
+
+	c.Data(http.StatusOK, "application/xml", []byte(xmlString))
 }
 
 // UpdateTaskHandler is a HTTP request handler for updating a task.

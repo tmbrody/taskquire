@@ -78,4 +78,7 @@ func SetupApiRoutes(r *gin.RouterGroup) {
 	r.GET("/orgs/:orgName/projects/:projectName/teams/:teamName/tasks/:taskName", handlers.GetOneTaskHandler)
 	r.PUT("/orgs/:orgName/projects/:projectName/teams/:teamName/tasks/:taskName", handlers.UpdateTaskHandler)
 	r.DELETE("/orgs/:orgName/projects/:projectName/teams/:teamName/tasks/:taskName", handlers.DeleteTaskHandler)
+
+	r.GET("/orgs/:orgName/projects/:projectName/teams/:teamName/tasks/:taskName/subtasks", handlers.GetSubtasksHandler)
+	r.PUT("/orgs/:orgName/projects/:projectName/teams/:teamName/tasks/:taskName/subtasks/:subtaskName", handlers.UpdateTaskHandler)
 }

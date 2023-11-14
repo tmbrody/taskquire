@@ -27,6 +27,7 @@ interface Task {
     ParentID: string[];
     CreatedAt: string[];
     UpdatedAt: string[];
+    Subtasks: string[];
 }
 
 const OneProjectPage: React.FC = () => {
@@ -150,14 +151,18 @@ const OneProjectPage: React.FC = () => {
                         </Link>
                         <button onClick={() => deleteTask(String(task.Name))}>X</button>
                     </div>
-                    <h1 className="text-white text-3xl font-bold mb-4">{task.Name}</h1>
-                    {String(task.Description.Valid) === 'true' ? (
-                        <p className="text-gray-300 mb-6"><strong>Description:</strong> {task.Description.String}</p>) : (
-                        <p className="text-gray-300 mb-6"><strong>Description:</strong> {null}</p>)
-                    }
-                    <p className="text-gray-300 mb-6"><strong>Owner ID:</strong> {task.OwnerID}</p>
-                    <p className="text-gray-300 mb-6"><strong>Created At:</strong> {task.CreatedAt}</p>
-                    <p className="text-gray-300 mb-6"><strong>Updated At:</strong> {task.UpdatedAt}</p>
+                    <Link href="/orgs/[orgName]/projects/[projectName]/teams/[teamName]/tasks/[taskName]/subtasks"
+                            as={`/orgs/${orgName}/projects/${projectName}/teams/${teamName}/tasks/${task.Name}/subtasks`} key={index}>
+                        <h1 className="text-white text-3xl font-bold mb-4">{task.Name}</h1>
+                        {String(task.Description.Valid) === 'true' ? (
+                            <p className="text-gray-300 mb-6"><strong>Description:</strong> {task.Description.String}</p>) : (
+                            <p className="text-gray-300 mb-6"><strong>Description:</strong> {null}</p>)
+                        }
+                        <p className="text-gray-300 mb-6"><strong>Owner ID:</strong> {task.OwnerID}</p>
+                        <p className="text-gray-300 mb-6"><strong>Created At:</strong> {task.CreatedAt}</p>
+                        <p className="text-gray-300 mb-6"><strong>Updated At:</strong> {task.UpdatedAt}</p>
+                        <p className="text-gray-300 mb-6"><strong>Subtasks:</strong> {task.Subtasks}</p>
+                    </Link>
                 </div>
             ))}
             {team &&
