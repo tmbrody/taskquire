@@ -154,7 +154,7 @@ const OneProjectPage: React.FC = () => {
                 </div>
             ))}
             {project &&
-                <Link href="/orgs/[orgName]/projects/[projectName]/teams/add" as={`/orgs/${orgName}/projects/${project.Name}/teams/addtoproject`} passHref>
+                <Link href="/orgs/[orgName]/projects/[projectName]/teams/addtoproject" as={`/orgs/${orgName}/projects/${project.Name}/teams/addtoproject`} passHref>
                     <button 
                         className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-full hover:shadow-lg w-full" 
                         type="submit"

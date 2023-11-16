@@ -2,3 +2,132 @@
 @import 'tailwindcss/base';
 @import 'tailwindcss/components';
 @import 'tailwindcss/utilities';
+
+.loading-icon {
+    position: absolute;
+    top: 50%;
+    width: 60px;
+    height: 60px;
+    z-index: 999;
+}
+
+.loading-icon-sphere {
+    position: absolute;
+    width: 0.5vh;
+    height: 0.5vh;
+    background-color: var(--circle-color, red);
+    top: 5px;
+    left: 50px;
+    transform: translateX(-50%);
+    border-radius: 50%;
+}
+
+.loading-icon-tail {
+    position: absolute;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    border-top: 2px solid var(--circle-color, red);
+    animation: loading-spin 1s linear infinite, change-load-color 7s linear infinite;
+}
+
+.overlay {
+    background-color: rgba(0, 0, 0, 0.8);
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 9999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+@keyframes change-load-color {
+    0% {
+        --circle-color: red;
+    }
+    4.2% {
+        --circle-color: rgb(255, 41, 0);
+    }
+    8.4% {
+        --circle-color: rgb(255, 82, 0);
+    }
+    12.6% {
+        --circle-color: rgb(255, 123, 0);
+    }
+    16.8% {
+        --circle-color: orange;
+    }
+    21% {
+        --circle-color: rgb(255, 187, 0);
+    }
+    25.2% {
+        --circle-color: rgb(255, 209, 0);
+    }
+    29.4% {
+        --circle-color: rgb(255, 231, 0);
+    }
+    33.6% {
+        --circle-color: yellow;
+    }
+    37.8% {
+        --circle-color: rgb(192, 224, 0);
+    }
+    42% {
+        --circle-color: rgb(128, 192, 0);
+    }
+    46.2% {
+        --circle-color: rgb(64, 160, 0);
+    }
+    50.4% {
+        --circle-color: green;
+    }
+    54.6% {
+        --circle-color: rgb(0, 96, 64);
+    }
+    58.8% {
+        --circle-color: rgb(0, 64, 128);
+    }
+    63% {
+        --circle-color: rgb(0, 32, 192);
+    }
+    67.2% {
+        --circle-color: blue;
+    }
+    71.4% {
+        --circle-color: rgb(19, 0, 224);
+    }
+    75.6% {
+        --circle-color: rgb(38, 0, 193);
+    }
+    79.8% {
+        --circle-color: rgb(57, 0, 162);
+    }
+    84% {
+        --circle-color: indigo;
+    }
+    88.2% {
+        --circle-color: rgb(120, 0, 98);
+    }
+    92.4% {
+        --circle-color: rgb(165, 0, 66);
+    }
+    96.6% {
+        --circle-color: rgb(210, 0, 34);
+    }
+    100% {
+        --circle-color: red;
+    }
+}
+
+@keyframes loading-spin {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}

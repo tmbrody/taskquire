@@ -74,11 +74,15 @@ func SetupApiRoutes(r *gin.RouterGroup) {
 	r.POST("/orgs/:orgName/projects/:projectName/teams/:teamName/tasks", handlers.CreateTaskHandler)
 	r.GET("/orgs/:orgName/projects/:projectName/teams/:teamName/tasks", handlers.GetTasksHandler)
 
+	r.POST("/orgs/:orgName/projects/:projectName/teams/:teamName/tasks/generate", handlers.GenerateTasksHandler)
+
 	r.POST("/orgs/:orgName/projects/:projectName/teams/:teamName/tasks/:taskName", handlers.CreateTaskHandler)
 	r.GET("/orgs/:orgName/projects/:projectName/teams/:teamName/tasks/:taskName", handlers.GetOneTaskHandler)
 	r.PUT("/orgs/:orgName/projects/:projectName/teams/:teamName/tasks/:taskName", handlers.UpdateTaskHandler)
 	r.DELETE("/orgs/:orgName/projects/:projectName/teams/:teamName/tasks/:taskName", handlers.DeleteTaskHandler)
 
 	r.GET("/orgs/:orgName/projects/:projectName/teams/:teamName/tasks/:taskName/subtasks", handlers.GetSubtasksHandler)
+	r.POST("/orgs/:orgName/projects/:projectName/teams/:teamName/tasks/:taskName/subtasks/generate", handlers.GenerateSubtasksHandler)
 	r.PUT("/orgs/:orgName/projects/:projectName/teams/:teamName/tasks/:taskName/subtasks/:subtaskName", handlers.UpdateTaskHandler)
+	r.DELETE("/orgs/:orgName/projects/:projectName/teams/:teamName/tasks/:taskName/subtasks/:subtaskName", handlers.DeleteTaskHandler)
 }

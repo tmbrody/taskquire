@@ -58,16 +58,14 @@ const UpdateTaskPage: React.FC<UpdateTaskPageProps> = () => {
                 <h1 className="text-white text-3xl font-bold mb-4">Welcome to Taskquire</h1>
                 <p className="text-gray-300 mb-6">Your task management solution</p>
                 <form onSubmit={handleUpdateSubtask}>
-                    <input
-                        className="mb-4 w-full px-3 py-2 border border-gray-300 rounded-md" 
-                        type="text" 
+                    <textarea
+                        className="mb-4 h-auto w-full px-3 py-2 border border-gray-300 rounded-md" 
                         placeholder="Name" 
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                     />
-                    <input 
-                        className="mb-4 w-full px-3 py-2 border border-gray-300 rounded-md" 
-                        type="text"
+                    <textarea
+                        className="mb-4 h-auto w-full px-3 py-2 border border-gray-300 rounded-md" 
                         placeholder="Description" 
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}

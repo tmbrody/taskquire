@@ -25,6 +25,8 @@ const OneTaskPage: React.FC = () => {
     const [task, setTask] = useState<Task | null>(null);
     const [subtasks, setSubtasks] = useState<Task | null>(null);
 
+    const [isLoading, setIsLoading] = useState(false);
+
     const router = useRouter();
 
     const { orgName, projectName, teamName, taskName } = router.query;
@@ -68,7 +70,6 @@ const OneTaskPage: React.FC = () => {
             });
 
             const data = await response.text();
-            console.log(data);
             
             xml2js.parseString(data, { explicitArray: false }, (err, result) => {
                 if (!err) {
@@ -80,9 +81,9 @@ const OneTaskPage: React.FC = () => {
         fetchSubtasks();
     }, [taskName]);
 
-    const deleteSubtask = async (taskName: string) => {
+    const deleteSubtask = async (subtaskName: string) => {
 
-        const response = await fetch(`http://localhost:8080/api/orgs/${orgName}/projects/${projectName}/teams/${teamName}/tasks/${taskName}`, {
+        const response = await fetch(`http://localhost:8080/api/orgs/${orgName}/projects/${projectName}/teams/${teamName}/tasks/${taskName}/subtasks/${subtaskName}`, {
             method: 'DELETE',
             headers: {
                 'Content-Type': 'application/xml',
@@ -93,12 +94,43 @@ const OneTaskPage: React.FC = () => {
         if (response.ok) {
             router.reload();
         } else {
-            console.error('Failed to remove team from project');
+            console.error('Failed to delete subtask from task');
         }
     };
 
+    const generateSubtasks = async () => {
+        setIsLoading(true);
+
+        const response = await fetch(`http://localhost:8080/api/orgs/${orgName}/projects/${projectName}/teams/${teamName}/tasks/${taskName}/subtasks/generate`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/xml',
+                'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+            }
+        });
+
+        if (response.ok) {
+            router.reload();
+        } else {
+            alert('Failed to generate tasks. Please try again.')
+            console.error('Failed to generate tasks');
+        }
+
+        setIsLoading(false);
+    };
+
     return (
-        <div className="bg-gray-900 min-h-screen flex flex-col items-center justify-center">
+        <div className={`bg-gray-900 min-h-screen flex flex-col items-center justify-center ${isLoading ? 'pointer-events-none' : ''}`}>
+            {isLoading && 
+                <div className='overlay'>
+                    <div className="loading-icon">
+                        <div className="loading-icon-tail">
+                            <div className="loading-icon-sphere"></div>
+                        </div>
+                    </div>
+                    <p className='text-white py-2 px-4 mt-48'>Generating Subtasks. Please wait...</p>
+                </div>
+            }
             <div className="flex flex-col items-center justify-center">
                 <Link href="/" passHref>
                     <Image src="/site_logo.png" alt="Taskquire Logo" width={300} height={300} priority />
@@ -157,6 +189,17 @@ const OneTaskPage: React.FC = () => {
                     </Link>
                 </div>
             ))}
+            {task &&
+                <div className="w-full text-center">
+                    <button 
+                        className="bg-purple-500 hover:bg-purple-600 text-white py-2 px-4 rounded-full hover:shadow-lg" 
+                        type="submit"
+                        onClick={generateSubtasks}
+                    >
+                        Generate Subtasks
+                    </button>
+                </div>
+            }
             {task &&
                 <Link href="/orgs/[orgName]/projects/[projectName]/teams/[teamName]/tasks/[taskName]/subtasks/create" 
                     as={`/orgs/${orgName}/projects/${projectName}/teams/${teamName}/tasks/${taskName}/subtasks/create`} passHref>

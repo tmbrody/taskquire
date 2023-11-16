@@ -34,6 +34,8 @@ const OneProjectPage: React.FC = () => {
     const [team, setTeam] = useState<Team | null>(null);
     const [tasks, setTasks] = useState<Task | null>(null);
 
+    const [isLoading, setIsLoading] = useState(false);
+
     const router = useRouter();
 
     const { orgName, projectName, teamName } = router.query;
@@ -101,12 +103,40 @@ const OneProjectPage: React.FC = () => {
         if (response.ok) {
             router.reload();
         } else {
-            console.error('Failed to remove team from project');
+            console.error('Failed to delete task from project');
         }
     };
 
+    const generateTasks = async () => {
+        setIsLoading(true);
+        const response = await fetch(`http://localhost:8080/api/orgs/${orgName}/projects/${projectName}/teams/${teamName}/tasks/generate`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/xml',
+                'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+            }
+        });
+
+        if (response.ok) {
+            router.reload();
+        } else {
+            console.error('Failed to generate tasks');
+        }
+        setIsLoading(false);
+    };
+
     return (
-        <div className="bg-gray-900 min-h-screen flex flex-col items-center justify-center">
+        <div className={`bg-gray-900 min-h-screen flex flex-col items-center justify-center ${isLoading ? 'pointer-events-none' : ''}`}>
+            {isLoading && 
+                <div className='overlay'>
+                    <div className="loading-icon">
+                        <div className="loading-icon-tail">
+                            <div className="loading-icon-sphere"></div>
+                        </div>
+                    </div>
+                    <p className='text-white py-2 px-4 mt-48'>Generating Tasks. Please wait...</p>
+                </div>
+            }
             <div className="flex flex-col items-center justify-center">
                 <Link href="/" passHref>
                     <Image src="/site_logo.png" alt="Taskquire Logo" width={300} height={300} priority />
@@ -165,6 +195,17 @@ const OneProjectPage: React.FC = () => {
                     </Link>
                 </div>
             ))}
+            {team &&
+                <div className="w-full text-center">
+                    <button 
+                        className="bg-purple-500 hover:bg-purple-600 text-white py-2 px-4 rounded-full hover:shadow-lg" 
+                        type="submit"
+                        onClick={generateTasks}
+                    >
+                        Generate Tasks
+                    </button>
+                </div>
+            }
             {team &&
                 <Link href="/orgs/[orgName]/projects/[projectName]/teams/[teamName]/tasks/create" 
                     as={`/orgs/${orgName}/projects/${projectName}/teams/${team.Name}/tasks/create`} passHref>

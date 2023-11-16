@@ -1,35 +1,36 @@
 package handlers
 
 import (
+	"bytes"
 	"database/sql"
 	"encoding/xml"
 	"net/http"
+	"os"
+	"os/exec"
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"github.com/tmbrody/taskquire/config"
 	"github.com/tmbrody/taskquire/internal/database"
 )
 
-// CreateTaskHandler is a HTTP request handler for creating a new task.
+// CreateTaskHandler handles the creation of a new task.
 func CreateTaskHandler(c *gin.Context) {
-
-	// Verify team membership and get project, team, database, and user ID.
+	// Verify team membership and get project details
 	project, team, db, userID := VerifyTeamMembershipAndGetProject(c)
 
-	// If team name is empty, return.
+	// If the team name is empty, return early
 	if team.Name == "" {
 		return
 	}
 
-	// Define a struct for holding XML request parameters.
+	// Define the parameters for task creation from XML
 	var params struct {
 		Name        string `XML:"name"`
 		Description string `XML:"description"`
 	}
 
-	// Bind XML request body to the params struct.
+	// Parse the XML request body and bind it to the params struct
 	if err := c.ShouldBindXML(&params); err != nil {
 		c.XML(http.StatusBadRequest, config.ErrorResponse{
 			Message: "Invalid XML",
@@ -37,8 +38,39 @@ func CreateTaskHandler(c *gin.Context) {
 		return
 	}
 
-	// Retrieve tasks for the project from the database.
-	tasks, err := db.GetTasksByProjectID(c, project.ID)
+	// Set task creation arguments
+	args := SetTaskCreationArgs(c, db, project, team, userID, params.Name, params.Description)
+
+	// Create a new task in the database
+	_, err := db.CreateTask(c, args)
+	if err != nil {
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to create a new task",
+		})
+		return
+	}
+
+	// Update timestamps for project, organization, and team
+	SetProjectUpdatedTime(c, db, project)
+	SetOrgUpdatedTimeUsingProject(c, db, project)
+	SetTeamUpdatedTime(c, db, team.ID)
+
+	// Respond with the created task details
+	c.XML(http.StatusCreated, args)
+}
+
+// GenerateTasksHandler generates tasks based on a project's existing tasks.
+func GenerateTasksHandler(c *gin.Context) {
+	// Verify team membership and get project details
+	project, team, db, userID := VerifyTeamMembershipAndGetProject(c)
+
+	// If the team name is empty, return early
+	if team.Name == "" {
+		return
+	}
+
+	// Retrieve existing project tasks from the database
+	projectTasks, err := db.GetTasksByProjectID(c, project.ID)
 	if err != nil {
 		c.XML(http.StatusInternalServerError, config.ErrorResponse{
 			Message: "Unable to get tasks",
@@ -46,95 +78,196 @@ func CreateTaskHandler(c *gin.Context) {
 		return
 	}
 
-	// Check if a task with the same name already exists in the project.
-	for _, task := range tasks {
-		if task.Name == params.Name {
-			c.XML(http.StatusBadRequest, config.ErrorResponse{
-				Message: "Task name already exists",
-			})
-			return
+	// Filter existing tasks to get top-level tasks (tasks without a parent)
+	existingTasks := []database.Task{}
+	for _, projectTask := range projectTasks {
+		if projectTask.ParentID == "" {
+			existingTasks = append(existingTasks, projectTask)
 		}
 	}
 
-	// Generate a new UUID for the task.
-	taskID, err := uuid.NewUUID()
-	if err != nil {
-		c.XML(http.StatusBadRequest, config.ErrorResponse{
-			Message: "Unable to generate task ID",
-		})
-		return
-	}
-
-	// Create a SQL null string for the task description.
-	var descriptionNullString sql.NullString
-
-	if params.Description != "" {
-		descriptionNullString.String = params.Description
-		descriptionNullString.Valid = true
-	} else {
-		descriptionNullString.Valid = false
-	}
-
-	// Initialize a parent task as an empty database.Task struct.
-	parentTask := database.Task{}
-
-	// Get the taskName parameter from the URL, if provided.
-	taskNameParam := c.Param("taskName")
-
-	// If taskNameParam is not empty, fetch the parent task by name from the database.
-	if taskNameParam != "" {
-		parentTask, err = db.GetTaskByName(c, taskNameParam)
-		if err != nil {
-			c.XML(http.StatusBadRequest, config.ErrorResponse{
-				Message: "Parent task does not exist",
-			})
-			return
-		}
-	}
-
-	// Define arguments for creating a new task.
-	args := database.CreateTaskParams{
-		ID:          taskID.String(),
-		Name:        params.Name,
-		Description: descriptionNullString,
-		CreatedAt:   time.Now(),
-		UpdatedAt:   time.Now(),
-		ProjectID:   project.ID,
-		TeamID:      team.ID,
-		OwnerID:     userID,
-		ParentID:    parentTask.ID,
-	}
-
-	// Create the new task in the database.
-	_, err = db.CreateTask(c, args)
+	// Marshal existing tasks into XML format
+	existingTasksXML, err := xml.Marshal(existingTasks)
 	if err != nil {
 		c.XML(http.StatusInternalServerError, config.ErrorResponse{
-			Message: "Unable to create new task",
+			Message: "Unable to marshal XML data",
 		})
 		return
 	}
 
-	// Update timestamps for project, organization, and team.
-	SetProjectUpdatedTime(c, db, project)
-	SetOrgUpdatedTimeUsingProject(c, db, project)
-	SetTeamUpdatedTime(c, db, team.ID)
+	// Execute a Python script to generate tasks based on existing ones
+	cmd := exec.Command("python3.10", "chatgpt/generate_tasks.py", project.Name, project.Description, string(existingTasksXML))
+	var out bytes.Buffer
+	cmd.Stdout = &out
+	cmd.Stderr = os.Stderr
+	err = cmd.Run()
+	if err != nil {
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to generate tasks",
+		})
+		return
+	}
 
-	// Respond with the created task details.
-	c.XML(http.StatusCreated, args)
+	// Unmarshal the generated tasks from the Python script's output
+	type Task struct {
+		Name        string `xml:"name"`
+		Description string `xml:"description"`
+	}
+
+	type Tasks struct {
+		Tasks []Task `xml:"task"`
+	}
+
+	var tasks Tasks
+	err = xml.Unmarshal(out.Bytes(), &tasks)
+	if err != nil {
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to unmarshal XML data",
+		})
+		return
+	}
+
+	// Create the generated tasks in the database and update timestamps
+	args := database.CreateTaskParams{}
+	for _, task := range tasks.Tasks {
+		args = SetTaskCreationArgs(c, db, project, team, userID, task.Name, task.Description)
+
+		if args == (database.CreateTaskParams{}) {
+			return
+		}
+
+		_, err := db.CreateTask(c, args)
+		if err != nil {
+			c.XML(http.StatusInternalServerError, config.ErrorResponse{
+				Message: "Unable to create a new task",
+			})
+			return
+		}
+
+		// Update timestamps for project, organization, and team
+		SetProjectUpdatedTime(c, db, project)
+		SetOrgUpdatedTimeUsingProject(c, db, project)
+		SetTeamUpdatedTime(c, db, team.ID)
+	}
+
+	// Respond with a success message
+	c.XML(http.StatusOK, "Tasks have been generated successfully")
 }
 
-// GetTasksHandler is a HTTP request handler for fetching tasks of a project.
-func GetTasksHandler(c *gin.Context) {
+// GenerateSubtasksHandler generates subtasks for a given task.
+func GenerateSubtasksHandler(c *gin.Context) {
+	// Verify team membership and get project details
+	project, team, db, userID := VerifyTeamMembershipAndGetProject(c)
 
-	// Verify team membership and get project, team, and database.
-	project, team, db, _ := VerifyTeamMembershipAndGetProject(c)
-
-	// If team name is empty, return.
+	// If the team name is empty, return early
 	if team.Name == "" {
 		return
 	}
 
-	// Retrieve tasks for the project from the database.
+	// Get the task details from the request
+	task, _ := GetTaskByParamName(c)
+
+	// If the task name is empty, return early
+	if task.Name == "" {
+		return
+	}
+
+	// Retrieve existing project tasks from the database
+	projectTasks, err := db.GetTasksByProjectID(c, project.ID)
+	if err != nil {
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to get tasks",
+		})
+		return
+	}
+
+	// Filter existing subtasks of the same parent task
+	existingSubtasks := []database.Task{}
+	for _, projectTask := range projectTasks {
+		if projectTask.ParentID == task.ParentID && projectTask.ID != task.ID {
+			existingSubtasks = append(existingSubtasks, projectTask)
+		}
+	}
+
+	// Marshal existing subtasks into XML format
+	existingSubtasksXML, err := xml.Marshal(existingSubtasks)
+	if err != nil {
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to marshal XML data",
+		})
+		return
+	}
+
+	// Execute a Python script to generate subtasks based on existing ones
+	cmd := exec.Command("python3.10", "chatgpt/generate_tasks.py", task.Name, task.Description.String, string(existingSubtasksXML))
+	var out bytes.Buffer
+	cmd.Stdout = &out
+	cmd.Stderr = os.Stderr
+	err = cmd.Run()
+	if err != nil {
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to generate subtasks",
+		})
+		return
+	}
+
+	// Unmarshal the generated subtasks from the Python script's output
+	type Task struct {
+		Name        string `xml:"name"`
+		Description string `xml:"description"`
+	}
+
+	type Tasks struct {
+		Tasks []Task `xml:"task"`
+	}
+
+	var tasks Tasks
+	err = xml.Unmarshal(out.Bytes(), &tasks)
+	if err != nil {
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to unmarshal XML data",
+		})
+		return
+	}
+
+	// Create the generated subtasks in the database and update timestamps
+	args := database.CreateTaskParams{}
+	for _, task := range tasks.Tasks {
+		args = SetTaskCreationArgs(c, db, project, team, userID, task.Name, task.Description)
+
+		if args == (database.CreateTaskParams{}) {
+			return
+		}
+
+		_, err := db.CreateTask(c, args)
+		if err != nil {
+			c.XML(http.StatusInternalServerError, config.ErrorResponse{
+				Message: "Unable to create a new subtask",
+			})
+			return
+		}
+
+		// Update timestamps for project, organization, and team
+		SetProjectUpdatedTime(c, db, project)
+		SetOrgUpdatedTimeUsingProject(c, db, project)
+		SetTeamUpdatedTime(c, db, team.ID)
+	}
+
+	// Respond with a success message
+	c.XML(http.StatusOK, "Subtasks have been generated successfully")
+}
+
+// GetTasksHandler retrieves and returns tasks for a project.
+func GetTasksHandler(c *gin.Context) {
+	// Verify team membership and get project details
+	project, team, db, _ := VerifyTeamMembershipAndGetProject(c)
+
+	// If the team name is empty, return early
+	if team.Name == "" {
+		return
+	}
+
+	// Retrieve all tasks for the project from the database
 	allTasks, err := db.GetTasksByProjectID(c, project.ID)
 	if err != nil {
 		c.XML(http.StatusInternalServerError, config.ErrorResponse{
@@ -143,18 +276,18 @@ func GetTasksHandler(c *gin.Context) {
 		return
 	}
 
+	// Filter top-level tasks (tasks without a parent)
 	tasks := []database.Task{}
-	for _, allTasks := range allTasks {
-		// Select tasks that have no parent task.
-		if allTasks.ParentID == "" {
-			tasks = append(tasks, allTasks)
+	for _, allTask := range allTasks {
+		if allTask.ParentID == "" {
+			tasks = append(tasks, allTask)
 		}
 	}
 
-	// Create a slice to hold task information.
+	// Prepare a map for task data to be converted to XML
 	var taskMap []gin.H
 	for _, task := range tasks {
-		// Fetch subtasks for the task from the database.
+		// Get subtasks for the current task
 		subtasks, err := db.GetSubtasksByParentID(c, task.ID)
 		if err != nil {
 			c.XML(http.StatusInternalServerError, config.ErrorResponse{
@@ -163,19 +296,21 @@ func GetTasksHandler(c *gin.Context) {
 			return
 		}
 
-		// Create a slice to hold subtask names.
+		// Prepare subtask names
 		var subtaskNames []string
 		for _, subtask := range subtasks {
 			subtaskNames = append(subtaskNames, subtask.Name)
 		}
 
+		// If no subtasks exist, add "None" to the list
 		if subtaskNames == nil {
 			subtaskNames = append(subtaskNames, "None")
 		}
 
-		// Create a TaskList structure for subtask names.
+		// Create a task list for subtasks
 		subtaskList := TaskList{Tasks: subtaskNames}
 
+		// Create a map for the task data
 		taskMap = append(taskMap, gin.H{
 			"ID":          task.ID,
 			"Name":        task.Name,
@@ -190,6 +325,7 @@ func GetTasksHandler(c *gin.Context) {
 		})
 	}
 
+	// Marshal the task data into XML
 	xmlData, err := xml.Marshal(gin.H{"Tasks": taskMap})
 	if err != nil {
 		c.XML(http.StatusInternalServerError, config.ErrorResponse{
@@ -198,29 +334,30 @@ func GetTasksHandler(c *gin.Context) {
 		return
 	}
 
+	// Convert the XML data to a custom format
 	xmlString, err := ConvertToCustomXML(xmlData, "task")
 	if err != nil {
 		c.XML(http.StatusInternalServerError, config.ErrorResponse{
-			Message: "Unable to convert XML data to custom format",
+			Message: "Unable to convert XML data to a custom format",
 		})
 		return
 	}
 
+	// Respond with the custom XML data
 	c.Data(http.StatusOK, "application/xml", []byte(xmlString))
 }
 
-// GetTasksHandler is a HTTP request handler for fetching tasks of a project.
+// GetSubtasksHandler handles the HTTP request to retrieve subtasks of a parent task.
 func GetSubtasksHandler(c *gin.Context) {
-
-	// Verify team membership and get project, team, and database.
+	// Verify team membership and get the project and database connection.
 	project, team, db, _ := VerifyTeamMembershipAndGetProject(c)
 
-	// If team name is empty, return.
+	// Check if the team name is empty, and if so, return.
 	if team.Name == "" {
 		return
 	}
 
-	// Retrieve tasks for the project from the database.
+	// Retrieve all tasks associated with the project.
 	allTasks, err := db.GetTasksByProjectID(c, project.ID)
 	if err != nil {
 		c.XML(http.StatusInternalServerError, config.ErrorResponse{
@@ -229,6 +366,7 @@ func GetSubtasksHandler(c *gin.Context) {
 		return
 	}
 
+	// Get the task name from the URL parameter.
 	taskNameParam := c.Param("taskName")
 	if taskNameParam == "" {
 		c.XML(http.StatusBadRequest, config.ErrorResponse{
@@ -237,6 +375,7 @@ func GetSubtasksHandler(c *gin.Context) {
 		return
 	}
 
+	// Retrieve the parent task by its name.
 	parentTask, err := db.GetTaskByName(c, taskNameParam)
 	if err != nil {
 		c.XML(http.StatusBadRequest, config.ErrorResponse{
@@ -245,18 +384,19 @@ func GetSubtasksHandler(c *gin.Context) {
 		return
 	}
 
+	// Create a slice to store subtasks.
 	tasks := []database.Task{}
 	for _, allTasks := range allTasks {
-		// Select tasks that have no parent task.
+		// Check if the task is a subtask of the parent task.
 		if allTasks.ParentID == parentTask.ID {
 			tasks = append(tasks, allTasks)
 		}
 	}
 
-	// Create a slice to hold task information.
+	// Create a list to store subtask names.
 	var taskMap []gin.H
 	for _, task := range tasks {
-		// Fetch subtasks for the task from the database.
+		// Retrieve subtasks for each task.
 		subtasks, err := db.GetSubtasksByParentID(c, task.ID)
 		if err != nil {
 			c.XML(http.StatusInternalServerError, config.ErrorResponse{
@@ -265,7 +405,6 @@ func GetSubtasksHandler(c *gin.Context) {
 			return
 		}
 
-		// Create a slice to hold subtask names.
 		var subtaskNames []string
 		for _, subtask := range subtasks {
 			subtaskNames = append(subtaskNames, subtask.Name)
@@ -275,7 +414,6 @@ func GetSubtasksHandler(c *gin.Context) {
 			subtaskNames = append(subtaskNames, "None")
 		}
 
-		// Create a TaskList structure for subtask names.
 		subtaskList := TaskList{Tasks: subtaskNames}
 
 		taskMap = append(taskMap, gin.H{
@@ -292,6 +430,7 @@ func GetSubtasksHandler(c *gin.Context) {
 		})
 	}
 
+	// Marshal the data to XML format.
 	xmlData, err := xml.Marshal(gin.H{"Tasks": taskMap})
 	if err != nil {
 		c.XML(http.StatusInternalServerError, config.ErrorResponse{
@@ -300,6 +439,7 @@ func GetSubtasksHandler(c *gin.Context) {
 		return
 	}
 
+	// Convert the XML data to a custom format and send it as a response.
 	xmlString, err := ConvertToCustomXML(xmlData, "task")
 	if err != nil {
 		c.XML(http.StatusInternalServerError, config.ErrorResponse{
@@ -311,9 +451,8 @@ func GetSubtasksHandler(c *gin.Context) {
 	c.Data(http.StatusOK, "application/xml", []byte(xmlString))
 }
 
-// GetOneTaskHandler is a HTTP request handler for fetching a single task by name.
+// GetOneTaskHandler handles the HTTP request to retrieve information about a single task.
 func GetOneTaskHandler(c *gin.Context) {
-
 	// Get the database connection from the context.
 	db, errBool := c.Value(string(config.DbContextKey)).(*database.Queries)
 	if !errBool {
@@ -323,10 +462,10 @@ func GetOneTaskHandler(c *gin.Context) {
 		return
 	}
 
-	// Get the taskName parameter from the URL.
+	// Get the task name from the URL parameter.
 	taskNameParam := c.Param("taskName")
 
-	// If taskNameParam is empty, return an error.
+	// Check if the task name is missing, and if so, return an error.
 	if taskNameParam == "" {
 		c.XML(http.StatusBadRequest, config.ErrorResponse{
 			Message: "Task name is missing",
@@ -334,7 +473,7 @@ func GetOneTaskHandler(c *gin.Context) {
 		return
 	}
 
-	// Fetch the task by name from the database.
+	// Retrieve the task by its name.
 	task, err := db.GetTaskByName(c, taskNameParam)
 	if err != nil {
 		c.XML(http.StatusInternalServerError, config.ErrorResponse{
@@ -343,7 +482,7 @@ func GetOneTaskHandler(c *gin.Context) {
 		return
 	}
 
-	// Fetch subtasks for the task from the database.
+	// Retrieve subtasks for the task.
 	subtasks, err := db.GetSubtasksByParentID(c, task.ID)
 	if err != nil {
 		c.XML(http.StatusInternalServerError, config.ErrorResponse{
@@ -352,16 +491,16 @@ func GetOneTaskHandler(c *gin.Context) {
 		return
 	}
 
-	// Create a slice to hold subtask names.
+	// Create a list to store subtask names.
 	var subtaskNames []string
 	for _, subtask := range subtasks {
 		subtaskNames = append(subtaskNames, subtask.Name)
 	}
 
-	// Create a TaskList structure for subtask names.
+	// Create a subtask list.
 	subtaskList := TaskList{Tasks: subtaskNames}
 
-	// Create a slice to hold task information.
+	// Create a map to store task information.
 	var taskMap []gin.H
 	taskMap = append(taskMap, gin.H{
 		"ID":          task.ID,
@@ -376,6 +515,7 @@ func GetOneTaskHandler(c *gin.Context) {
 		"Subtasks":    subtaskList,
 	})
 
+	// Marshal the data to XML format.
 	xmlData, err := xml.Marshal(gin.H{"Tasks": taskMap})
 	if err != nil {
 		c.XML(http.StatusInternalServerError, config.ErrorResponse{
@@ -384,6 +524,7 @@ func GetOneTaskHandler(c *gin.Context) {
 		return
 	}
 
+	// Convert the XML data to a custom format and send it as a response.
 	xmlString, err := ConvertToCustomXML(xmlData, "task")
 	if err != nil {
 		c.XML(http.StatusInternalServerError, config.ErrorResponse{
@@ -395,24 +536,23 @@ func GetOneTaskHandler(c *gin.Context) {
 	c.Data(http.StatusOK, "application/xml", []byte(xmlString))
 }
 
-// UpdateTaskHandler is a HTTP request handler for updating a task.
+// UpdateTaskHandler handles the HTTP request to update a task's information.
 func UpdateTaskHandler(c *gin.Context) {
-
-	// Get the task and database from the URL parameter.
+	// Get the task and database connection.
 	task, db := GetTaskByParamName(c)
 
-	// If task name is empty, return.
+	// Check if the task name is empty, and if so, return.
 	if task.Name == "" {
 		return
 	}
 
-	// Define a struct for holding XML request parameters.
+	// Define a struct to hold the updated task parameters from XML.
 	var params struct {
 		Name        string `XML:"name"`
 		Description string `XML:"description"`
 	}
 
-	// Bind XML request body to the params struct.
+	// Parse the XML request body and bind it to the params struct.
 	if err := c.ShouldBindXML(&params); err != nil {
 		c.XML(http.StatusBadRequest, config.ErrorResponse{
 			Message: "Invalid XML",
@@ -420,13 +560,13 @@ func UpdateTaskHandler(c *gin.Context) {
 		return
 	}
 
-	// Determine the updated task name.
+	// Get the updated task name from the XML request or keep the existing name.
 	taskName := params.Name
 	if taskName == "" {
 		taskName = task.Name
 	}
 
-	// Determine the updated task description.
+	// Get the updated task description from the XML request.
 	taskDescriptionString := params.Description
 	var taskDescription sql.NullString
 
@@ -438,7 +578,7 @@ func UpdateTaskHandler(c *gin.Context) {
 		taskDescription.Valid = false
 	}
 
-	// Define arguments for updating the task.
+	// Create arguments for updating the task.
 	args := database.UpdateTaskParams{
 		ID:          task.ID,
 		Name:        taskName,
@@ -455,36 +595,34 @@ func UpdateTaskHandler(c *gin.Context) {
 		return
 	}
 
-	// Update timestamps for the associated project.
+	// Set the project's updated time using the task.
 	project := SetProjectUpdatedTimeUsingTask(c, db, task)
 
-	// If project name is empty, return.
+	// Check if the project name is empty, and if so, return.
 	if project.Name == "" {
 		return
 	}
 
-	// Update timestamps for the organization using the project.
+	// Set the organization's updated time using the project.
 	SetOrgUpdatedTimeUsingProject(c, db, project)
 
-	// Update timestamps for the team.
+	// Set the team's updated time using the task's team ID.
 	SetTeamUpdatedTime(c, db, task.TeamID)
 
-	// Respond with the updated task details.
 	c.XML(http.StatusOK, args)
 }
 
-// DeleteTaskHandler is a HTTP request handler for deleting a task.
+// DeleteTaskHandler handles the HTTP request to delete a task.
 func DeleteTaskHandler(c *gin.Context) {
-
-	// Get the task and database from the URL parameter.
+	// Get the task and database connection.
 	task, db := GetTaskByParamName(c)
 
-	// If task name is empty, return.
+	// Check if the task name is empty, and if so, return.
 	if task.Name == "" {
 		return
 	}
 
-	// Fetch subtasks for the task from the database.
+	// Retrieve subtasks associated with the task.
 	subtasks, err := db.GetSubtasksByParentID(c, task.ID)
 	if err != nil {
 		c.XML(http.StatusInternalServerError, config.ErrorResponse{
@@ -493,7 +631,7 @@ func DeleteTaskHandler(c *gin.Context) {
 		return
 	}
 
-	// Delete the parent task's subtasks from the database.
+	// Delete all subtasks if they exist.
 	if len(subtasks) > 0 {
 		for _, subtask := range subtasks {
 			_, err := db.DeleteTask(c, subtask.ID)
@@ -508,7 +646,7 @@ func DeleteTaskHandler(c *gin.Context) {
 
 	// If the task has a parent task, update the parent task.
 	if task.ParentID != "" {
-		// Fetch the parent task from the database.
+		// Retrieve the parent task by its ID.
 		parentTask, err := db.GetTaskByID(c, task.ParentID)
 		if err != nil {
 			c.XML(http.StatusInternalServerError, config.ErrorResponse{
@@ -517,7 +655,7 @@ func DeleteTaskHandler(c *gin.Context) {
 			return
 		}
 
-		// Define arguments for updating the task.
+		// Create arguments for updating the parent task (no changes required).
 		args := database.UpdateTaskParams{
 			ID:          parentTask.ID,
 			Name:        parentTask.Name,
@@ -544,20 +682,19 @@ func DeleteTaskHandler(c *gin.Context) {
 		return
 	}
 
-	// Update timestamps for the associated project.
+	// Set the project's updated time using the task.
 	project := SetProjectUpdatedTimeUsingTask(c, db, task)
 
-	// If project name is empty, return.
+	// Check if the project name is empty, and if so, return.
 	if project.Name == "" {
 		return
 	}
 
-	// Update timestamps for the organization using the project.
+	// Set the organization's updated time using the project.
 	SetOrgUpdatedTimeUsingProject(c, db, project)
 
-	// Update timestamps for the team.
+	// Set the team's updated time using the task's team ID.
 	SetTeamUpdatedTime(c, db, task.TeamID)
 
-	// Respond with a success message.
 	c.XML(http.StatusOK, "Task has been deleted successfully")
 }
