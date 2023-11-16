@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"database/sql"
 	"net/http"
 	"reflect"
 	"strings"
@@ -8,6 +9,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 	"github.com/tmbrody/taskquire/config"
 	"github.com/tmbrody/taskquire/internal/database"
 	"github.com/tmbrody/taskquire/tokenPackage"
@@ -304,14 +306,20 @@ func GetTaskByParamName(c *gin.Context) (database.Task, *database.Queries) {
 	}
 
 	// Get the task name parameter
-	taskNameParam := c.Param("taskName")
+	taskNameParam := c.Param("subtaskName")
 
 	// Check if the task name is missing
 	if taskNameParam == "" {
-		c.XML(http.StatusBadRequest, config.ErrorResponse{
-			Message: "Task name is missing",
-		})
-		return database.Task{}, nil
+		// Get the task name parameter
+		taskNameParam = c.Param("taskName")
+
+		// Check if the task name is missing
+		if taskNameParam == "" {
+			c.XML(http.StatusBadRequest, config.ErrorResponse{
+				Message: "Task name is missing",
+			})
+			return database.Task{}, nil
+		}
 	}
 
 	// Retrieve the task by name
@@ -350,6 +358,79 @@ func GetTaskByParamName(c *gin.Context) (database.Task, *database.Queries) {
 	}
 
 	return task, db
+}
+
+// SetTaskCreationArgs sets arguments for creating a new task.
+func SetTaskCreationArgs(c *gin.Context, db *database.Queries, project database.Project, team database.Team, userID, taskName, taskDescription string) database.CreateTaskParams {
+	// Retrieve tasks for the project from the database.
+	tasks, err := db.GetTasksByProjectID(c, project.ID)
+	if err != nil {
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to get tasks",
+		})
+		return database.CreateTaskParams{}
+	}
+
+	// Check if a task with the same name already exists in the project.
+	for _, task := range tasks {
+		if task.Name == taskName {
+			c.XML(http.StatusBadRequest, config.ErrorResponse{
+				Message: "Task name already exists",
+			})
+			return database.CreateTaskParams{}
+		}
+	}
+
+	// Generate a new UUID for the task.
+	taskID, err := uuid.NewUUID()
+	if err != nil {
+		c.XML(http.StatusBadRequest, config.ErrorResponse{
+			Message: "Unable to generate task ID",
+		})
+		return database.CreateTaskParams{}
+	}
+
+	// Create a SQL null string for the task description.
+	var descriptionNullString sql.NullString
+
+	if taskDescription != "" {
+		descriptionNullString.String = taskDescription
+		descriptionNullString.Valid = true
+	} else {
+		descriptionNullString.Valid = false
+	}
+
+	// Initialize a parent task as an empty database.Task struct.
+	parentTask := database.Task{}
+
+	// Get the taskName parameter from the URL, if provided.
+	taskNameParam := c.Param("taskName")
+
+	// If taskNameParam is not empty, fetch the parent task by name from the database.
+	if taskNameParam != "" {
+		parentTask, err = db.GetTaskByName(c, taskNameParam)
+		if err != nil {
+			c.XML(http.StatusBadRequest, config.ErrorResponse{
+				Message: "Parent task does not exist",
+			})
+			return database.CreateTaskParams{}
+		}
+	}
+
+	// Define arguments for creating a new task.
+	args := database.CreateTaskParams{
+		ID:          taskID.String(),
+		Name:        taskName,
+		Description: descriptionNullString,
+		CreatedAt:   time.Now(),
+		UpdatedAt:   time.Now(),
+		ProjectID:   project.ID,
+		TeamID:      team.ID,
+		OwnerID:     userID,
+		ParentID:    parentTask.ID,
+	}
+
+	return args
 }
 
 // GetUserAndTeamByParam retrieves user, team, and database connections based on parameters in the request.

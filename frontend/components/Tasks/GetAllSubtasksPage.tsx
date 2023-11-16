@@ -9,15 +9,6 @@ interface Description {
     Valid: string[];
 }
 
-interface Team {
-    Name: string[];
-    Description: Description;
-    OwnerID: string[];
-    CreatedAt: string[];
-    UpdatedAt: string[];
-    Users: string[];
-}
-
 interface Task {
     Name: string[];
     Description: Description;
@@ -30,19 +21,19 @@ interface Task {
     Subtasks: string[];
 }
 
-const OneProjectPage: React.FC = () => {
-    const [team, setTeam] = useState<Team | null>(null);
-    const [tasks, setTasks] = useState<Task | null>(null);
+const OneTaskPage: React.FC = () => {
+    const [task, setTask] = useState<Task | null>(null);
+    const [subtasks, setSubtasks] = useState<Task | null>(null);
 
     const [isLoading, setIsLoading] = useState(false);
 
     const router = useRouter();
 
-    const { orgName, projectName, teamName } = router.query;
+    const { orgName, projectName, teamName, taskName } = router.query;
 
     useEffect(() => {
-        const fetchTeam = async () => {
-            const response = await fetch(`http://localhost:8080/api/orgs/${orgName}/projects/${projectName}/teams/${teamName}`, {
+        const fetchTask = async () => {
+            const response = await fetch(`http://localhost:8080/api/orgs/${orgName}/projects/${projectName}/teams/${teamName}/tasks/${taskName}`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/xml',
@@ -54,23 +45,23 @@ const OneProjectPage: React.FC = () => {
 
             xml2js.parseString(data, { explicitArray: false }, (err, result) => {
                 if (!err) {
-                    setTeam(result.teams.team);
+                    setTask(result.tasks.task);
                 }
             });
         }
 
-        if (teamName) {
-            fetchTeam();
+        if (taskName) {
+            fetchTask();
         }
-    }, [teamName]);
+    }, [taskName]);
 
     useEffect(() => {
-        const fetchTasks = async () => {
-            if (!teamName) {
+        const fetchSubtasks = async () => {
+            if (!taskName) {
                 return;
             }
 
-            const response = await fetch(`http://localhost:8080/api/orgs/${orgName}/projects/${projectName}/teams/${teamName}/tasks`, {
+            const response = await fetch(`http://localhost:8080/api/orgs/${orgName}/projects/${projectName}/teams/${teamName}/tasks/${taskName}/subtasks`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/xml',
@@ -82,17 +73,17 @@ const OneProjectPage: React.FC = () => {
             
             xml2js.parseString(data, { explicitArray: false }, (err, result) => {
                 if (!err) {
-                    setTasks(result.tasks.task);
+                    setSubtasks(result.tasks.task);
                 }
             });
         }
 
-        fetchTasks();
-    }, [teamName]);
+        fetchSubtasks();
+    }, [taskName]);
 
-    const deleteTask = async (taskName: string) => {
+    const deleteSubtask = async (subtaskName: string) => {
 
-        const response = await fetch(`http://localhost:8080/api/orgs/${orgName}/projects/${projectName}/teams/${teamName}/tasks/${taskName}`, {
+        const response = await fetch(`http://localhost:8080/api/orgs/${orgName}/projects/${projectName}/teams/${teamName}/tasks/${taskName}/subtasks/${subtaskName}`, {
             method: 'DELETE',
             headers: {
                 'Content-Type': 'application/xml',
@@ -103,13 +94,14 @@ const OneProjectPage: React.FC = () => {
         if (response.ok) {
             router.reload();
         } else {
-            console.error('Failed to delete task from project');
+            console.error('Failed to delete subtask from task');
         }
     };
 
-    const generateTasks = async () => {
+    const generateSubtasks = async () => {
         setIsLoading(true);
-        const response = await fetch(`http://localhost:8080/api/orgs/${orgName}/projects/${projectName}/teams/${teamName}/tasks/generate`, {
+
+        const response = await fetch(`http://localhost:8080/api/orgs/${orgName}/projects/${projectName}/teams/${teamName}/tasks/${taskName}/subtasks/generate`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/xml',
@@ -120,8 +112,10 @@ const OneProjectPage: React.FC = () => {
         if (response.ok) {
             router.reload();
         } else {
+            alert('Failed to generate tasks. Please try again.')
             console.error('Failed to generate tasks');
         }
+
         setIsLoading(false);
     };
 
@@ -134,7 +128,7 @@ const OneProjectPage: React.FC = () => {
                             <div className="loading-icon-sphere"></div>
                         </div>
                     </div>
-                    <p className='text-white py-2 px-4 mt-48'>Generating Tasks. Please wait...</p>
+                    <p className='text-white py-2 px-4 mt-48'>Generating Subtasks. Please wait...</p>
                 </div>
             }
             <div className="flex flex-col items-center justify-center">
@@ -159,83 +153,61 @@ const OneProjectPage: React.FC = () => {
                     </Link>
                 </div>
             </div>
-            {team && (
+            {task && (
                 <div className="bg-gray-800 p-8 rounded-lg shadow-md w-80 mb-4">
-                    <h1 className="text-white text-3xl font-bold mb-4">{team.Name}</h1>
-                    {String(team.Description.Valid) === 'true' ? (
-                        <p className="text-gray-300 mb-6"><strong>Description:</strong> {team.Description.String}</p>) : (
+                    <h1 className="text-white text-3xl font-bold mb-4">{task.Name}</h1>
+                    {String(task.Description.Valid) === 'true' ? (
+                        <p className="text-gray-300 mb-6"><strong>Description:</strong> {task.Description.String}</p>) : (
                         <p className="text-gray-300 mb-6"><strong>Description:</strong> {null}</p>)
                     }
-                    <p className="text-gray-300 mb-6"><strong>Owner ID:</strong> {team.OwnerID}</p>
-                    <p className="text-gray-300 mb-6"><strong>Created At:</strong> {team.CreatedAt}</p>
-                    <p className="text-gray-300 mb-6"><strong>Updated At:</strong> {team.UpdatedAt}</p>
-                    <p className="text-gray-300 mb-6"><strong>Users:</strong> {team.Users}</p>
+                    <p className="text-gray-300 mb-6"><strong>Owner ID:</strong> {task.OwnerID}</p>
+                    <p className="text-gray-300 mb-6"><strong>Created At:</strong> {task.CreatedAt}</p>
+                    <p className="text-gray-300 mb-6"><strong>Updated At:</strong> {task.UpdatedAt}</p>
                 </div>
             )}
-            {team && tasks && (Array.isArray(tasks) ? tasks : [tasks]).map((task, index) => (
+            {task && subtasks && (Array.isArray(subtasks) ? subtasks : [subtasks]).map((subtask, index) => (
                 <div className="bg-gray-800 p-8 rounded-lg shadow-md w-80 mb-4" key={index}>
                     <div className="text-white flex justify-between">
-                        <Link href={{ pathname: "/orgs/[orgName]/projects/[projectName]/teams/[teamName]/tasks/[taskName]/update", 
-                                        query: { orgName: orgName, projectName: projectName, teamName: teamName, taskName: task.Name, taskDescription: task.Description.String } }}>
+                        <Link href={{ pathname: "/orgs/[orgName]/projects/[projectName]/teams/[teamName]/tasks/[taskName]/subtasks/[subtaskName]/update", 
+                                        query: { orgName: orgName, projectName: projectName, teamName: teamName, taskName: task.Name, 
+                                                subtaskName: subtask.Name, subtaskDescription: subtask.Description.String } }}>
                             <button>✏️</button>
                         </Link>
-                        <button onClick={() => deleteTask(String(task.Name))}>X</button>
+                        <button onClick={() => deleteSubtask(String(subtask.Name))}>X</button>
                     </div>
                     <Link href="/orgs/[orgName]/projects/[projectName]/teams/[teamName]/tasks/[taskName]/subtasks"
-                            as={`/orgs/${orgName}/projects/${projectName}/teams/${teamName}/tasks/${task.Name}/subtasks`} key={index}>
-                        <h1 className="text-white text-3xl font-bold mb-4">{task.Name}</h1>
-                        {String(task.Description.Valid) === 'true' ? (
-                            <p className="text-gray-300 mb-6"><strong>Description:</strong> {task.Description.String}</p>) : (
+                            as={`/orgs/${orgName}/projects/${projectName}/teams/${teamName}/tasks/${subtask.Name}/subtasks`} key={index}>
+                        <h1 className="text-white text-3xl font-bold mb-4">{subtask.Name}</h1>
+                        {String(subtask.Description.Valid) === 'true' ? (
+                            <p className="text-gray-300 mb-6"><strong>Description:</strong> {subtask.Description.String}</p>) : (
                             <p className="text-gray-300 mb-6"><strong>Description:</strong> {null}</p>)
                         }
-                        <p className="text-gray-300 mb-6"><strong>Owner ID:</strong> {task.OwnerID}</p>
-                        <p className="text-gray-300 mb-6"><strong>Created At:</strong> {task.CreatedAt}</p>
-                        <p className="text-gray-300 mb-6"><strong>Updated At:</strong> {task.UpdatedAt}</p>
-                        <p className="text-gray-300 mb-6"><strong>Subtasks:</strong> {task.Subtasks}</p>
+                        <p className="text-gray-300 mb-6"><strong>Owner ID:</strong> {subtask.OwnerID}</p>
+                        <p className="text-gray-300 mb-6"><strong>Created At:</strong> {subtask.CreatedAt}</p>
+                        <p className="text-gray-300 mb-6"><strong>Updated At:</strong> {subtask.UpdatedAt}</p>
+                        <p className="text-gray-300 mb-6"><strong>Subtasks:</strong> {subtask.Subtasks}</p>
                     </Link>
                 </div>
             ))}
-            {team &&
+            {task &&
                 <div className="w-full text-center">
                     <button 
                         className="bg-purple-500 hover:bg-purple-600 text-white py-2 px-4 rounded-full hover:shadow-lg" 
                         type="submit"
-                        onClick={generateTasks}
+                        onClick={generateSubtasks}
                     >
-                        Generate Tasks
+                        Generate Subtasks
                     </button>
                 </div>
             }
-            {team &&
-                <Link href="/orgs/[orgName]/projects/[projectName]/teams/[teamName]/tasks/create" 
-                    as={`/orgs/${orgName}/projects/${projectName}/teams/${team.Name}/tasks/create`} passHref>
+            {task &&
+                <Link href="/orgs/[orgName]/projects/[projectName]/teams/[teamName]/tasks/[taskName]/subtasks/create" 
+                    as={`/orgs/${orgName}/projects/${projectName}/teams/${teamName}/tasks/${taskName}/subtasks/create`} passHref>
                     <button 
                         className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-full hover:shadow-lg w-full" 
                         type="submit"
                     >
-                        Create Task
-                    </button>
-                </Link>
-            }
-            {team &&
-                <Link href="/orgs/[orgName]/projects/[projectName]/teams/[teamName]/adduser"
-                    as={`/orgs/${orgName}/projects/${projectName}/teams/${team.Name}/adduser`} passHref>
-                    <button 
-                        className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-full hover:shadow-lg w-full" 
-                        type="submit"
-                    >
-                        Add User to Team
-                    </button>
-                </Link>
-            }
-            {team &&
-                <Link href="/orgs/[orgName]/projects/[projectName]/teams/[teamName]/removeuser"
-                    as={`/orgs/${orgName}/projects/${projectName}/teams/${team.Name}/removeuser`} passHref>
-                    <button 
-                        className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-full hover:shadow-lg w-full" 
-                        type="submit"
-                    >
-                        Remove User to Team
+                        Create Subtask
                     </button>
                 </Link>
             }
@@ -243,4 +215,4 @@ const OneProjectPage: React.FC = () => {
     );
 };
 
-export default OneProjectPage;
+export default OneTaskPage;

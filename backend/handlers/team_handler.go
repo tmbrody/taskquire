@@ -249,6 +249,10 @@ func GetOneTeamHandler(c *gin.Context) {
 		userNames = append(userNames, u.Name)
 	}
 
+	if userNames == nil {
+		userNames = append(userNames, "No users in team")
+	}
+
 	// Create a UserList struct to store user names.
 	userList := UserList{Users: userNames}
 
