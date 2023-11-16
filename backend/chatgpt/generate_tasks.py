@@ -4,10 +4,10 @@ import string
 import xml.etree.ElementTree as ET
 from openai import OpenAI
 
-# Get command-line arguments for project task name, description, and existing project tasks
-project_task_name = sys.argv[1]
-project_task_description = sys.argv[2]
-existing_projects_tasks = sys.argv[3]
+# Read the project task name, description, and existing project tasks from stdin
+project_task_name = sys.stdin.readline().strip()
+project_task_description = sys.stdin.readline().strip()
+existing_projects_tasks = sys.stdin.read()
 
 # Initialize the OpenAI client with the API key
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))

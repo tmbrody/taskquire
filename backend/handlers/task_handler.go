@@ -4,9 +4,11 @@ import (
 	"bytes"
 	"database/sql"
 	"encoding/xml"
+	"fmt"
 	"net/http"
 	"os"
 	"os/exec"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -95,11 +97,19 @@ func GenerateTasksHandler(c *gin.Context) {
 		return
 	}
 
+	// Prepare the input data
+	inputData := fmt.Sprintf("%s\n%s\n%s", project.Name, project.Description, string(existingTasksXML))
+
 	// Execute a Python script to generate tasks based on existing ones
-	cmd := exec.Command("python3.10", "chatgpt/generate_tasks.py", project.Name, project.Description, string(existingTasksXML))
+	cmd := exec.Command("python3", "chatgpt/generate_tasks.py")
+	cmd.Stdin = strings.NewReader(inputData)
+
+	// Capture the output of the Python script
 	var out bytes.Buffer
 	cmd.Stdout = &out
 	cmd.Stderr = os.Stderr
+
+	// Run the Python script and check for errors
 	err = cmd.Run()
 	if err != nil {
 		c.XML(http.StatusInternalServerError, config.ErrorResponse{
@@ -198,11 +208,19 @@ func GenerateSubtasksHandler(c *gin.Context) {
 		return
 	}
 
+	// Prepare the input data
+	inputData := fmt.Sprintf("%s\n%s\n%s", task.Name, task.Description.String, string(existingSubtasksXML))
+
 	// Execute a Python script to generate subtasks based on existing ones
-	cmd := exec.Command("python3.10", "chatgpt/generate_tasks.py", task.Name, task.Description.String, string(existingSubtasksXML))
+	cmd := exec.Command("python3", "chatgpt/generate_tasks.py")
+	cmd.Stdin = strings.NewReader(inputData)
+
+	// Capture the output of the Python script
 	var out bytes.Buffer
 	cmd.Stdout = &out
 	cmd.Stderr = os.Stderr
+
+	// Run the Python script and check for errors
 	err = cmd.Run()
 	if err != nil {
 		c.XML(http.StatusInternalServerError, config.ErrorResponse{
