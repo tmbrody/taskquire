@@ -12,9 +12,10 @@ interface Description {
 interface Team {
     Name: string[];
     Description: Description;
-    OwnerID: string[];
+    OwnerName: string[];
     CreatedAt: string[];
     UpdatedAt: string[];
+    Projects: string[];
 }
 
 interface YourTeamsPageProps {}
@@ -105,9 +106,10 @@ const YourTeamsPage: React.FC<YourTeamsPageProps> = () => {
                             <p className="text-gray-300 mb-6"><strong>Description:</strong> {team.Description.String}</p>) : (
                             <p className="text-gray-300 mb-6"><strong>Description:</strong> {null}</p>)
                         }
-                        <p className="text-gray-300 mb-6"><strong>Owner ID:</strong> {team.OwnerID}</p>
+                        <p className="text-gray-300 mb-6"><strong>Owner:</strong> {team.OwnerName}</p>
                         <p className="text-gray-300 mb-6"><strong>Created At:</strong> {team.CreatedAt}</p>
                         <p className="text-gray-300 mb-6"><strong>Updated At:</strong> {team.UpdatedAt}</p>
+                        <p className="text-gray-300 mb-6"><strong>Projects:</strong> {team.Projects}</p>
                     </Link>
                 </div>
             ))}

@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/xml"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -135,16 +136,36 @@ func GetOrgsHandler(c *gin.Context) {
 		}
 	}
 
+	projectList := []string{}
+
 	// Create a list of organization data to return.
 	var orgMap []gin.H
 	for _, org := range orgs {
+		// Get the organization owner's name.
+		owner, _ := db.GetUserByID(c, org.OwnerID)
+
+		// Get the organization's projects.
+		projects, _ := db.GetProjectsByOrgID(c, org.ID)
+
+		// Create a list of project names.
+		for _, project := range projects {
+			p, _ := db.GetProjectByID(c, project.ID)
+			projectList = append(projectList, p.Name)
+		}
+
 		orgMap = append(orgMap, gin.H{
 			"ID":          org.ID,
 			"Name":        org.Name,
 			"Description": org.Description,
-			"OwnerID":     org.OwnerID,
+			"OwnerName":   owner.Name,
 			"CreatedAt":   org.CreatedAt,
 			"UpdatedAt":   org.UpdatedAt,
+			"Projects": func() string {
+				if len(projectList) == 0 {
+					return "None"
+				}
+				return strings.Join(projectList, ", ")
+			}(),
 		})
 	}
 

@@ -5,6 +5,7 @@ import (
 	"encoding/xml"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -86,6 +87,21 @@ func CreateTeamHandler(c *gin.Context) {
 		return
 	}
 
+	// Create arguments for adding the user to the team.
+	args := database.AddUsertoTeamParams{
+		UserID: userID,
+		TeamID: teamID.String(),
+	}
+
+	// Call the database function to add the user to the team.
+	_, err = db.AddUsertoTeam(c, args)
+	if err != nil {
+		c.XML(http.StatusBadRequest, gin.H{
+			"error": fmt.Sprintf("Unable to add creator to %s", params.Name),
+		})
+		return
+	}
+
 	// Return the created team as XML response.
 	c.XML(http.StatusCreated, argsCreate)
 }
@@ -112,6 +128,7 @@ func GetTeamsHandler(c *gin.Context) {
 	}
 
 	var teams []database.Team
+	var allTeams []database.TeamsUser
 	var err error
 
 	// If the token is nil, return.
@@ -128,7 +145,7 @@ func GetTeamsHandler(c *gin.Context) {
 		}
 	} else {
 		// Get all organizations from the database.
-		teams, err = db.GetTeamsByOwnerID(c, token.Claims.(jwt.MapClaims)["Subject"].(string))
+		allTeams, err = db.GetAllTeamsByUser(c, token.Claims.(jwt.MapClaims)["Subject"].(string))
 
 		// If there's an error retrieving organizations, return an error.
 		if err != nil {
@@ -137,19 +154,66 @@ func GetTeamsHandler(c *gin.Context) {
 			})
 			return
 		}
+
+		// Prepare a slice to store team information.
+		for _, team := range allTeams {
+			t, err := db.GetTeamByID(c, team.TeamID)
+			if err != nil {
+				c.XML(http.StatusInternalServerError, config.ErrorResponse{
+					Message: "Unable to get team from ID",
+				})
+				return
+			}
+			// Add team information to the slice.
+			teams = append(teams, t)
+		}
 	}
+
+	userList := []string{}
+	projectList := []string{}
 
 	// Prepare a slice to store team information.
 	var teamMap []gin.H
 	for _, team := range teams {
+		// Retrieve users and projects associated with the team.
+		users, _ := db.GetAllUsersFromTeam(c, team.ID)
+		projects, _ := db.GetAllProjectsFromTeam(c, team.ID)
+
+		// Prepare a list of user names in the team.
+		for _, user := range users {
+			u, _ := db.GetUserByID(c, user.UserID)
+			userList = append(userList, u.Name)
+		}
+
+		// Prepare a list of project names in the team.
+		for _, project := range projects {
+			p, _ := db.GetProjectByID(c, project.ProjectID)
+			projectList = append(projectList, p.Name)
+		}
+
+		// Retrieve the team owner.
+		owner, _ := db.GetUserByID(c, team.OwnerID)
+
 		// Add team information to the slice.
 		teamMap = append(teamMap, gin.H{
 			"ID":          team.ID,
 			"Name":        team.Name,
 			"Description": team.Description,
-			"OwnerID":     team.OwnerID,
+			"OwnerName":   owner.Name,
 			"CreatedAt":   team.CreatedAt,
 			"UpdatedAt":   team.UpdatedAt,
+			"Users": func() string {
+				if len(userList) == 0 {
+					return "None"
+				}
+				return strings.Join(userList, ", ")
+			}(),
+			"Projects": func() string {
+				if len(projectList) == 0 {
+					return "None"
+				}
+				return strings.Join(projectList, ", ")
+			}(),
 		})
 	}
 
@@ -202,31 +266,6 @@ func GetOneTeamHandler(c *gin.Context) {
 		return
 	}
 
-	// Get the projects associated with the team.
-	projectIDs, err := db.GetAllProjectsFromTeam(c, team.ID)
-	if err != nil {
-		c.XML(http.StatusInternalServerError, config.ErrorResponse{
-			Message: "Unable to get projects",
-		})
-		return
-	}
-
-	// Prepare a list of user names in the team.
-	var projectNames []string
-	for _, project := range projectIDs {
-		p, err := db.GetProjectByID(c, project.ProjectID)
-		if err != nil {
-			c.XML(http.StatusInternalServerError, config.ErrorResponse{
-				Message: "Unable to get project name",
-			})
-			return
-		}
-		projectNames = append(projectNames, p.Name)
-	}
-
-	// Create a UserList struct to store user names.
-	projectList := ProjectList{Projects: projectNames}
-
 	// Retrieve users associated with the team.
 	users, err := db.GetAllUsersFromTeam(c, team.ID)
 	if err != nil {
@@ -256,16 +295,24 @@ func GetOneTeamHandler(c *gin.Context) {
 	// Create a UserList struct to store user names.
 	userList := UserList{Users: userNames}
 
+	// Retrieve the team owner.
+	owner, err := db.GetUserByID(c, team.OwnerID)
+	if err != nil {
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to get team owner name",
+		})
+		return
+	}
+
 	// Prepare team information for response.
 	var teamMap []gin.H
 	teamMap = append(teamMap, gin.H{
 		"ID":          team.ID,
 		"Name":        team.Name,
 		"Description": team.Description,
-		"OwnerID":     team.OwnerID,
+		"OwnerName":   owner.Name,
 		"CreatedAt":   team.CreatedAt,
 		"UpdatedAt":   team.UpdatedAt,
-		"Projects":    projectList,
 		"Users":       userList,
 	})
 
@@ -278,6 +325,112 @@ func GetOneTeamHandler(c *gin.Context) {
 	}
 
 	xmlString, err := ConvertToCustomXML(xmlData, "team")
+	if err != nil {
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to convert XML data to custom format",
+		})
+		return
+	}
+
+	c.Data(http.StatusOK, "application/xml", []byte(xmlString))
+}
+
+// GetProjectsFromTeamHandler handles retrieving a list of projects associated with a team.
+func GetProjectsFromTeamHandler(c *gin.Context) {
+	// Get the database connection from the context.
+	db, errBool := c.Value(string(config.DbContextKey)).(*database.Queries)
+	if !errBool {
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to get database connection",
+		})
+		return
+	}
+
+	// Get the team name from the URL parameter.
+	teamNameParam := c.Param("teamName")
+
+	// Check if the team name is missing.
+	if teamNameParam == "" {
+		c.XML(http.StatusBadRequest, config.ErrorResponse{
+			Message: "Team name is missing",
+		})
+		return
+	}
+
+	// Get the team information from the database.
+	team, err := db.GetTeamByName(c, teamNameParam)
+	if err != nil {
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to get team",
+		})
+		return
+	}
+
+	// Get the projects associated with the team.
+	projectIDs, err := db.GetAllProjectsFromTeam(c, team.ID)
+	if err != nil {
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to get projects",
+		})
+		return
+	}
+
+	var projects []database.Project
+
+	// Prepare a slice to store project information.
+	for _, project := range projectIDs {
+		p, err := db.GetProjectByID(c, project.ProjectID)
+		if err != nil {
+			c.XML(http.StatusInternalServerError, config.ErrorResponse{
+				Message: "Unable to get project from ID",
+			})
+			return
+		}
+
+		// Add the project information to the slice.
+		projects = append(projects, p)
+	}
+
+	teams := []string{}
+
+	// Create a list of project information to be returned.
+	var projectMap []gin.H
+	for _, project := range projects {
+		// Get the organization associated with the project.
+		org, _ := db.GetOrgByID(c, project.OrgID)
+
+		// Get the teams associated with the project.
+		teamIDs, _ := db.GetAllTeamsFromProject(c, project.ID)
+		for _, team := range teamIDs {
+			t, _ := db.GetTeamByID(c, team.TeamID)
+			teams = append(teams, t.Name)
+		}
+
+		projectMap = append(projectMap, gin.H{
+			"ID":          project.ID,
+			"Name":        project.Name,
+			"Description": project.Description,
+			"OrgName":     org.Name,
+			"CreatedAt":   project.CreatedAt,
+			"UpdatedAt":   project.UpdatedAt,
+			"Teams": func() string {
+				if len(teams) == 0 {
+					return "None"
+				}
+				return strings.Join(teams, ", ")
+			}(),
+		})
+	}
+
+	xmlData, err := xml.Marshal(gin.H{"Projects": projectMap})
+	if err != nil {
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to marshal XML data",
+		})
+		return
+	}
+
+	xmlString, err := ConvertToCustomXML(xmlData, "project")
 	if err != nil {
 		c.XML(http.StatusInternalServerError, config.ErrorResponse{
 			Message: "Unable to convert XML data to custom format",
@@ -314,7 +467,7 @@ func GetTeamsFromProjectHandler(c *gin.Context) {
 	project, err := db.GetProjectByName(c, projectNameParam)
 	if err != nil {
 		c.XML(http.StatusInternalServerError, config.ErrorResponse{
-			Message: "Unable to get organization",
+			Message: "Unable to get project",
 		})
 		return
 	}
@@ -347,13 +500,42 @@ func GetTeamsFromProjectHandler(c *gin.Context) {
 	// Create a list of team information to be returned.
 	var teamMap []gin.H
 	for _, team := range teams {
+		// Get the owner of the team
+		owner, _ := db.GetUserByID(c, team.OwnerID)
+
+		taskList := []string{}
+
+		// Retrieve all tasks for the project from the database
+		taskProjectIDs, _ := db.GetTasksByProjectID(c, project.ID)
+
+		// Retrieve all tasks for the team from the database
+		taskTeamIDs, _ := db.GetTasksByTeamID(c, team.ID)
+
+		// If the task is in both lists, add it to the task list
+		for _, pTask := range taskProjectIDs {
+			for _, tTask := range taskTeamIDs {
+				if pTask.ID == tTask.ID {
+					task, _ := db.GetTaskByID(c, pTask.ID)
+					if task.ParentID == "" {
+						taskList = append(taskList, task.Name)
+					}
+				}
+			}
+		}
+
 		teamMap = append(teamMap, gin.H{
 			"ID":          team.ID,
 			"Name":        team.Name,
 			"Description": team.Description,
-			"OwnerID":     team.OwnerID,
+			"OwnerName":   owner.Name,
 			"CreatedAt":   team.CreatedAt,
 			"UpdatedAt":   team.UpdatedAt,
+			"Tasks": func() string {
+				if len(taskList) == 0 {
+					return "None"
+				}
+				return strings.Join(taskList, ", ")
+			}(),
 		})
 	}
 

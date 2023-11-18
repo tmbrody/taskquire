@@ -6,9 +6,10 @@ import xml2js from 'xml2js';
 interface Org {
     Name: string[];
     Description: string[];
-    OwnerID: string[];
+    OwnerName: string[];
     CreatedAt: string[];
     UpdatedAt: string[];
+    Projects: string[];
 }
 
 interface AllOrgsPageProps {}
@@ -62,13 +63,14 @@ const AllOrgsPage: React.FC<AllOrgsPageProps> = () => {
                 </div>
             </div>
             {orgs && (Array.isArray(orgs) ? orgs : [orgs]).map((org, index) => (
-                <Link href="/orgs/[orgName]" as={`/orgs/${org.Name}`} key={index}>
+                <Link href="/orgs/[orgName]/projects" as={`/orgs/${org.Name}/projects`} key={index}>
                     <div className="bg-gray-800 p-8 rounded-lg shadow-md w-80 mb-4">
                         <h1 className="text-white text-3xl font-bold mb-4">{org.Name}</h1>
                         <p className="text-gray-300 mb-6"><strong>Description:</strong> {org.Description}</p>
-                        <p className="text-gray-300 mb-6"><strong>Owner ID:</strong> {org.OwnerID}</p>
+                        <p className="text-gray-300 mb-6"><strong>Owner:</strong> {org.OwnerName}</p>
                         <p className="text-gray-300 mb-6"><strong>Created At:</strong> {org.CreatedAt}</p>
                         <p className="text-gray-300 mb-6"><strong>Updated At:</strong> {org.UpdatedAt}</p>
+                        <p className="text-gray-300 mb-6"><strong>Projects:</strong> {org.Projects}</p>
                     </div>
                 </Link>
             ))}

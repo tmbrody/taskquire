@@ -12,7 +12,7 @@ interface Description {
 interface Task {
     Name: string[];
     Description: Description;
-    OwnerID: string[];
+    OwnerName: string[];
     ProjectID: string[];
     TeamID: string[];
     ParentID: string[];
@@ -160,7 +160,7 @@ const OneTaskPage: React.FC = () => {
                         <p className="text-gray-300 mb-6"><strong>Description:</strong> {task.Description.String}</p>) : (
                         <p className="text-gray-300 mb-6"><strong>Description:</strong> {null}</p>)
                     }
-                    <p className="text-gray-300 mb-6"><strong>Owner ID:</strong> {task.OwnerID}</p>
+                    <p className="text-gray-300 mb-6"><strong>Owner:</strong> {task.OwnerName}</p>
                     <p className="text-gray-300 mb-6"><strong>Created At:</strong> {task.CreatedAt}</p>
                     <p className="text-gray-300 mb-6"><strong>Updated At:</strong> {task.UpdatedAt}</p>
                 </div>

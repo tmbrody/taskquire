@@ -305,6 +305,9 @@ func GetTasksHandler(c *gin.Context) {
 	// Prepare a map for task data to be converted to XML
 	var taskMap []gin.H
 	for _, task := range tasks {
+		// Retrieve the task owner
+		owner, _ := db.GetUserByID(c, task.OwnerID)
+
 		// Get subtasks for the current task
 		subtasks, err := db.GetSubtasksByParentID(c, task.ID)
 		if err != nil {
@@ -337,7 +340,7 @@ func GetTasksHandler(c *gin.Context) {
 			"UpdatedAt":   task.UpdatedAt,
 			"ProjectID":   task.ProjectID,
 			"TeamID":      task.TeamID,
-			"OwnerID":     task.OwnerID,
+			"OwnerName":   owner.Name,
 			"ParentID":    task.ParentID,
 			"Subtasks":    subtaskList,
 		})
@@ -518,13 +521,22 @@ func GetOneTaskHandler(c *gin.Context) {
 	// Create a subtask list.
 	subtaskList := TaskList{Tasks: subtaskNames}
 
+	// Retrieve the task owner.
+	owner, err := db.GetUserByID(c, task.OwnerID)
+	if err != nil {
+		c.XML(http.StatusInternalServerError, config.ErrorResponse{
+			Message: "Unable to get owner",
+		})
+		return
+	}
+
 	// Create a map to store task information.
 	var taskMap []gin.H
 	taskMap = append(taskMap, gin.H{
 		"ID":          task.ID,
 		"Name":        task.Name,
 		"Description": task.Description,
-		"OwnerID":     task.OwnerID,
+		"OwnerName":   owner.Name,
 		"ProjectID":   task.ProjectID,
 		"TeamID":      task.TeamID,
 		"CreatedAt":   task.CreatedAt,

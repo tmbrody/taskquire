@@ -47,6 +47,8 @@ func SetupApiRoutes(r *gin.RouterGroup) {
 	r.DELETE("/teams", handlers.RemoveUserFromTeamHandler)
 	r.DELETE("/teams/:teamName", handlers.DeleteTeamHandler)
 
+	r.GET("/teams/:teamName/projects", handlers.GetProjectsFromTeamHandler)
+
 	r.POST("/users", handlers.CreateUserHandler)
 	r.GET("/users", handlers.GetUsersHandler)
 	r.GET("/users/:userName", handlers.GetOneUserHandler)

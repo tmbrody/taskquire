@@ -14,6 +14,10 @@ WHERE name = ?;
 SELECT * FROM tasks
 WHERE project_id = ?;
 
+-- name: GetTasksByTeamID :many
+SELECT * FROM tasks
+WHERE team_id = ?;
+
 -- name: GetSubtasksByParentID :many
 SELECT * FROM tasks
 WHERE parent_id = ?;

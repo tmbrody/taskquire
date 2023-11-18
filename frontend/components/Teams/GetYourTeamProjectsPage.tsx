@@ -4,10 +4,15 @@ import Link from 'next/link';
 import Image from 'next/image';
 import xml2js from 'xml2js';
 
-interface Org {
+interface Description {
+    String: string[];
+    Valid: string[];
+}
+
+interface Team {
     Name: string[];
-    Description: string[];
-    OwnerID: string[];
+    Description: Description;
+    OwnerName: string[];
     CreatedAt: string[];
     UpdatedAt: string[];
 }
@@ -15,23 +20,23 @@ interface Org {
 interface Project {
     Name: string[];
     Description: string[];
+    OrgName: string[];
     CreatedAt: string[];
     UpdatedAt: string[];
-    Teams: string[];
 }
 
-interface OneOrgAllProjectsPageProps {}
+interface OneTeamAllProjectsPageProps {}
 
-const OneOrgAllProjectsPage: React.FC<OneOrgAllProjectsPageProps> = () => {
-    const [org, setOrg] = useState<Org | null>(null);
+const OneTeamAllProjectsPage: React.FC<OneTeamAllProjectsPageProps> = () => {
+    const [team, setTeam] = useState<Team | null>(null);
     const [projects, setProjects] = useState<Project[]>([]);
     const router = useRouter();
 
-    const { orgName } = router.query;
+    const { teamName } = router.query;
 
     useEffect(() => {
-        const fetchOrg = async () => {
-            const response = await fetch(`http://localhost:8080/api/orgs/${orgName}`, {
+        const fetchTeam = async () => {
+            const response = await fetch(`http://localhost:8080/api/teams/${teamName}`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/xml',
@@ -43,29 +48,23 @@ const OneOrgAllProjectsPage: React.FC<OneOrgAllProjectsPageProps> = () => {
 
             xml2js.parseString(data, { explicitArray: false }, (err, result) => {
                 if (!err) {
-                    setOrg({
-                        Name: result.Org.Name,
-                        Description: result.Org.Description,
-                        OwnerID: result.Org.OwnerID,
-                        CreatedAt: result.Org.CreatedAt,
-                        UpdatedAt: result.Org.UpdatedAt,
-                    });
+                    setTeam(result.teams.team);
                 }
             });
         }
 
-        if (orgName) {
-            fetchOrg();
+        if (teamName) {
+            fetchTeam();
         }
-    }, [orgName]);
+    }, [teamName]);
 
     useEffect(() => {
         const fetchProjects = async () => {
-            if (!orgName) {
+            if (!teamName) {
                 return;
             }
 
-            const response = await fetch(`http://localhost:8080/api/orgs/${orgName}/projects`, {
+            const response = await fetch(`http://localhost:8080/api/teams/${teamName}/projects`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/xml',
@@ -83,7 +82,7 @@ const OneOrgAllProjectsPage: React.FC<OneOrgAllProjectsPageProps> = () => {
         }
 
         fetchProjects();
-    }, [orgName]);
+    }, [teamName]);
 
     const deleteProject = async (orgName: string, projectName: string) => {
         const response = await fetch(`http://localhost:8080/api/orgs/${orgName}/projects/${projectName}`, {
@@ -125,45 +124,35 @@ const OneOrgAllProjectsPage: React.FC<OneOrgAllProjectsPageProps> = () => {
                     </Link>
                 </div>
             </div>
-            {org && (
+            {team && (
                 <div className="bg-gray-800 p-8 rounded-lg shadow-md w-80 mb-4">
-                    <h1 className="text-white text-3xl font-bold mb-4">{org.Name}</h1>
-                    <p className="text-gray-300 mb-6"><strong>Description:</strong> {org.Description}</p>
-                    <p className="text-gray-300 mb-6"><strong>Owner ID:</strong> {org.OwnerID}</p>
-                    <p className="text-gray-300 mb-6"><strong>Created At:</strong> {org.CreatedAt}</p>
-                    <p className="text-gray-300 mb-6"><strong>Updated At:</strong> {org.UpdatedAt}</p>
+                    <h1 className="text-white text-3xl font-bold mb-4">{team.Name}</h1>
+                    <p className="text-gray-300 mb-6"><strong>Description:</strong> {team.Description.String}</p>
+                    <p className="text-gray-300 mb-6"><strong>Owner:</strong> {team.OwnerName}</p>
+                    <p className="text-gray-300 mb-6"><strong>Created At:</strong> {team.CreatedAt}</p>
+                    <p className="text-gray-300 mb-6"><strong>Updated At:</strong> {team.UpdatedAt}</p>
                 </div>
             )}
-            {org && projects && (Array.isArray(projects) ? projects : [projects]).map((project, index) => (
+            {team && projects && (Array.isArray(projects) ? projects : [projects]).map((project, index) => (
                 <div className="bg-gray-800 p-8 rounded-lg shadow-md w-80 mb-4" key={index}>
                     <div className="text-white flex justify-between">
                         <Link href={{ pathname: "/orgs/[orgName]/projects/[projectName]/update",
-                                         query: { orgName: orgName, projectName: project.Name, projectDescription: project.Description } }}>
+                                         query: { orgName: project.OrgName, projectName: project.Name, projectDescription: project.Description } }}>
                             <button>✏️</button>
                         </Link>
-                        <button onClick={() => deleteProject(String(org.Name), String(project.Name))}>X</button>
+                        <button onClick={() => deleteProject(String(project.OrgName), String(project.Name))}>X</button>
                     </div>
-                    <Link href="/orgs/[orgName]/projects/[projectName]/teams" as={`/orgs/${org.Name}/projects/${project.Name}/teams`} key={index}>
+                    <Link href="/orgs/[orgName]/projects/[projectName]/teams/[teamName]/tasks" as={`/orgs/${project.OrgName}/projects/${project.Name}/teams/${team.Name}/tasks`} key={index}>
                         <h1 className="text-white text-3xl font-bold mb-4">{project.Name}</h1>
                         <p className="text-gray-300 mb-6"><strong>Description:</strong> {project.Description}</p>
+                        <p className="text-gray-300 mb-6"><strong>Organization:</strong> {project.OrgName}</p>
                         <p className="text-gray-300 mb-6"><strong>Created At:</strong> {project.CreatedAt}</p>
                         <p className="text-gray-300 mb-6"><strong>Updated At:</strong> {project.UpdatedAt}</p>
-                        <p className="text-gray-300 mb-6"><strong>Teams:</strong> {project.Teams}</p>
                     </Link>
                 </div>
             ))}
-            {org &&
-                <Link href="/orgs/[orgName]/projects/create" as={`/orgs/${org.Name}/projects/create`} passHref>
-                    <button 
-                        className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-full hover:shadow-lg w-full" 
-                        type="submit"
-                    >
-                        Create Project
-                    </button>
-                </Link>
-            }
         </div>
     );
 };
 
-export default OneOrgAllProjectsPage;
+export default OneTeamAllProjectsPage;

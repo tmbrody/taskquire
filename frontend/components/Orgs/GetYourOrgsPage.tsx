@@ -7,7 +7,7 @@ import xml2js from 'xml2js';
 interface Org {
     Name: string[];
     Description: string[];
-    OwnerID: string[];
+    OwnerName: string[];
     CreatedAt: string[];
     UpdatedAt: string[];
 }
@@ -97,7 +97,7 @@ const YourOrgsPage: React.FC<YourOrgsPageProps> = () => {
                     <Link href="/orgs/[orgName]/projects" as={`/orgs/${org.Name}/projects`}>
                         <h1 className="text-white text-3xl font-bold mb-4">{org.Name}</h1>
                         <p className="text-gray-300 mb-6"><strong>Description:</strong> {org.Description}</p>
-                        <p className="text-gray-300 mb-6"><strong>Owner ID:</strong> {org.OwnerID}</p>
+                        <p className="text-gray-300 mb-6"><strong>Owner:</strong> {org.OwnerName}</p>
                         <p className="text-gray-300 mb-6"><strong>Created At:</strong> {org.CreatedAt}</p>
                         <p className="text-gray-300 mb-6"><strong>Updated At:</strong> {org.UpdatedAt}</p>
                     </Link>

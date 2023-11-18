@@ -15,7 +15,7 @@ interface Org {
 interface Project {
     Name: string[];
     Description: string[];
-    OrgID: string[];
+    OrgName: string[];
     CreatedAt: string[];
     UpdatedAt: string[];
 }
@@ -85,6 +85,22 @@ const OneOrgAllProjectsPage: React.FC<OneOrgAllProjectsPageProps> = () => {
         fetchProjects();
     }, [orgName]);
 
+    const deleteProject = async (orgName: string, projectName: string) => {
+        const response = await fetch(`http://localhost:8080/api/orgs/${orgName}/projects/${projectName}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/xml',
+                'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+            },
+        });
+
+        if (response.ok) {
+            router.reload();
+        } else {
+            console.error('Failed to delete project');
+        }
+    };
+
     return (
         <div className="bg-gray-900 min-h-screen flex flex-col items-center justify-center">
             <div className="flex flex-col items-center justify-center">
@@ -120,11 +136,20 @@ const OneOrgAllProjectsPage: React.FC<OneOrgAllProjectsPageProps> = () => {
             )}
             {org && projects && (Array.isArray(projects) ? projects : [projects]).map((project, index) => (
                 <div className="bg-gray-800 p-8 rounded-lg shadow-md w-80 mb-4" key={index}>
-                    <h1 className="text-white text-3xl font-bold mb-4">{project.Name}</h1>
-                    <p className="text-gray-300 mb-6"><strong>Description:</strong> {project.Description}</p>
-                    <p className="text-gray-300 mb-6"><strong>Org ID:</strong> {project.OrgID}</p>
-                    <p className="text-gray-300 mb-6"><strong>Created At:</strong> {project.CreatedAt}</p>
-                    <p className="text-gray-300 mb-6"><strong>Updated At:</strong> {project.UpdatedAt}</p>
+                    <div className="text-white flex justify-between">
+                        <Link href={{ pathname: "/orgs/[orgName]/projects/[projectName]/update",
+                                         query: { orgName: orgName, projectName: project.Name, projectDescription: project.Description } }}>
+                            <button>✏️</button>
+                        </Link>
+                        <button onClick={() => deleteProject(String(org.Name), String(project.Name))}>X</button>
+                    </div>
+                    <Link href="/orgs/[orgName]/projects/[projectName]/teams" as={`/orgs/${project.OrgName}/projects/${project.Name}/teams`} key={index}>
+                        <h1 className="text-white text-3xl font-bold mb-4">{project.Name}</h1>
+                        <p className="text-gray-300 mb-6"><strong>Description:</strong> {project.Description}</p>
+                        <p className="text-gray-300 mb-6"><strong>Organization:</strong> {project.OrgName}</p>
+                        <p className="text-gray-300 mb-6"><strong>Created At:</strong> {project.CreatedAt}</p>
+                        <p className="text-gray-300 mb-6"><strong>Updated At:</strong> {project.UpdatedAt}</p>
+                    </Link>
                 </div>
             ))}
         </div>

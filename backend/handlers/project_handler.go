@@ -4,6 +4,7 @@ import (
 	"encoding/xml"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -114,16 +115,36 @@ func GetProjectsHandler(c *gin.Context) {
 		return
 	}
 
+	teamList := []string{}
+
 	// Create a list of project information to be returned.
 	var projectMap []gin.H
 	for _, project := range projects {
+		// Get the orgs associated with the project.
+		org, _ := db.GetOrgByID(c, project.OrgID)
+
+		// Get the teams associated with the project.
+		teamIDs, _ := db.GetAllTeamsFromProject(c, project.ID)
+
+		// Create a list of team names.
+		for _, team := range teamIDs {
+			t, _ := db.GetTeamByID(c, team.TeamID)
+			teamList = append(teamList, t.Name)
+		}
+
 		projectMap = append(projectMap, gin.H{
 			"ID":          project.ID,
 			"Name":        project.Name,
 			"Description": project.Description,
-			"OrgID":       project.OrgID,
+			"OrgName":     org.Name,
 			"CreatedAt":   project.CreatedAt,
 			"UpdatedAt":   project.UpdatedAt,
+			"Teams": func() string {
+				if len(teamList) == 0 {
+					return "None"
+				}
+				return strings.Join(teamList, ", ")
+			}(),
 		})
 	}
 

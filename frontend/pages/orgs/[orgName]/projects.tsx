@@ -1,4 +1,4 @@
-import OneOrgAllProjectsPage from "../../../components/Projects/GetAllProjectsPage";
+import OneOrgAllProjectsPage from "../../../components/Orgs/GetYourOrgProjectsPage";
 
 export default function ViewProjects() {
     return <OneOrgAllProjectsPage />;

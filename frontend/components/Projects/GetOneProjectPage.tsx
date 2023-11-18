@@ -20,9 +20,10 @@ interface Project {
 interface Team {
     Name: string[];
     Description: Description;
-    OwnerID: string[];
+    OwnerName: string[];
     CreatedAt: string[];
     UpdatedAt: string[];
+    Tasks: string[];
 }
 
 const OneProjectPage: React.FC = () => {
@@ -147,9 +148,10 @@ const OneProjectPage: React.FC = () => {
                             <p className="text-gray-300 mb-6"><strong>Description:</strong> {team.Description.String}</p>) : (
                             <p className="text-gray-300 mb-6"><strong>Description:</strong> {null}</p>)
                         }
-                        <p className="text-gray-300 mb-6"><strong>Org ID:</strong> {team.OwnerID}</p>
+                        <p className="text-gray-300 mb-6"><strong>Owner:</strong> {team.OwnerName}</p>
                         <p className="text-gray-300 mb-6"><strong>Created At:</strong> {team.CreatedAt}</p>
                         <p className="text-gray-300 mb-6"><strong>Updated At:</strong> {team.UpdatedAt}</p>
+                        <p className="text-gray-300 mb-6"><strong>Tasks:</strong> {team.Tasks}</p>
                     </Link>
                 </div>
             ))}

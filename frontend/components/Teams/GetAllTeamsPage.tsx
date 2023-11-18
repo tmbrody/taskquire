@@ -11,9 +11,11 @@ interface Description {
 interface Team {
     Name: string[];
     Description: Description;
-    OwnerID: string[];
+    OwnerName: string[];
     CreatedAt: string[];
     UpdatedAt: string[];
+    Users: string[];
+    Projects: string[];
 }
 
 interface AllTeamsPageProps {}
@@ -67,15 +69,17 @@ const AllTeamsPage: React.FC<AllTeamsPageProps> = () => {
                 </div>
             </div>
             {teams && (Array.isArray(teams) ? teams : [teams]).map((team, index) => (
-                <div className="bg-gray-800 p-8 rounded-lg shadow-md w-80 mb-4">
+                <div className="bg-gray-800 p-8 rounded-lg shadow-md w-80 mb-4" key={index}>
                     <h1 className="text-white text-3xl font-bold mb-4">{team.Name}</h1>
                     {String(team.Description.Valid) === 'true' ? (
                         <p className="text-gray-300 mb-6"><strong>Description:</strong> {team.Description.String}</p>) : (
                         <p className="text-gray-300 mb-6"><strong>Description:</strong> {null}</p>)
                     }
-                    <p className="text-gray-300 mb-6"><strong>Owner ID:</strong> {team.OwnerID}</p>
+                    <p className="text-gray-300 mb-6"><strong>Owner:</strong> {team.OwnerName}</p>
                     <p className="text-gray-300 mb-6"><strong>Created At:</strong> {team.CreatedAt}</p>
                     <p className="text-gray-300 mb-6"><strong>Updated At:</strong> {team.UpdatedAt}</p>
+                    <p className="text-gray-300 mb-6"><strong>Users:</strong> {team.Users}</p>
+                    <p className="text-gray-300 mb-6"><strong>Projects:</strong> {team.Projects}</p>
                 </div>
             ))}
         </div>

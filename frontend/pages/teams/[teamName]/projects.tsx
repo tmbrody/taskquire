@@ -1,5 +1,5 @@
-import OneTeamPage from "../../../components/Teams/GetOneTeamPage";
+import OneTeamAllProjectsPage from "../../../components/Teams/GetYourTeamProjectsPage";
 
-export default function ViewTeam() {
-    return <OneTeamPage />;
+export default function ViewOneTeamAllProjects() {
+    return <OneTeamAllProjectsPage />;
 };

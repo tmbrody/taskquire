@@ -171,6 +171,44 @@ func (q *Queries) GetTasksByProjectID(ctx context.Context, projectID string) ([]
 	return items, nil
 }
 
+const getTasksByTeamID = `-- name: GetTasksByTeamID :many
+SELECT id, name, description, created_at, updated_at, project_id, team_id, owner_id, parent_id FROM tasks
+WHERE team_id = ?
+`
+
+func (q *Queries) GetTasksByTeamID(ctx context.Context, teamID string) ([]Task, error) {
+	rows, err := q.db.QueryContext(ctx, getTasksByTeamID, teamID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Task
+	for rows.Next() {
+		var i Task
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Description,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.ProjectID,
+			&i.TeamID,
+			&i.OwnerID,
+			&i.ParentID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const updateTask = `-- name: UpdateTask :execresult
 UPDATE tasks
 SET name = ?, description = ?, updated_at = ?
